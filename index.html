@@ -1,1 +1,839 @@
 
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101827">
+<title>Daneel Giskard — Ang Kaibigan ni Daniel</title>
+
+<style>
+:root {
+  --bg:#101827;
+  --panel:#182335;
+  --panel2:#202e42;
+  --line:#334155;
+  --text:#f1f5f9;
+  --muted:#9baec4;
+  --blue:#3b82f6;
+  --cyan:#93c5fd;
+  --green:#34d399;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+button,textarea { font:inherit; }
+button { cursor:pointer; touch-action:manipulation; }
+button:focus-visible,textarea:focus-visible {
+  outline:2px solid var(--cyan);
+  outline-offset:2px;
+}
+.app {
+  height:100vh;
+  height:100dvh;
+  max-width:1100px;
+  margin:auto;
+  display:flex;
+  flex-direction:column;
+}
+header {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px 16px;
+  background:var(--panel);
+  border-bottom:1px solid var(--line);
+}
+.logo {
+  width:48px;height:48px;flex-shrink:0;
+  border-radius:16px;
+  display:grid;place-items:center;
+  font-size:26px;
+  color:white;
+  background:linear-gradient(145deg,#2563eb,#164e91);
+  box-shadow:0 0 24px #2563eb30;
+}
+.brand { flex:1;min-width:0; }
+.brand h1 { font-size:18px;margin:0 0 5px; }
+.brand p { margin:0;color:var(--cyan);font-size:12px; }
+.top-actions { display:flex;gap:7px; }
+.small-btn {
+  border:1px solid var(--line);
+  background:var(--panel2);
+  color:var(--text);
+  padding:10px;
+  border-radius:11px;
+  font-size:13px;
+}
+.workspace {
+  flex:1;
+  min-height:0;
+  display:flex;
+  overflow:hidden;
+}
+.sidebar {
+  width:245px;
+  flex-shrink:0;
+  padding:16px 12px;
+  background:#131e2d;
+  border-right:1px solid var(--line);
+  overflow-y:auto;
+}
+.section-label {
+  font-size:11px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin:8px 8px 12px;
+}
+.new-btn {
+  width:100%;
+  border:1px solid #3b82f670;
+  border-radius:12px;
+  background:#1d4ed825;
+  color:var(--text);
+  padding:13px;
+  text-align:left;
+  margin-bottom:20px;
+}
+.history-item {
+  display:block;
+  width:100%;
+  border:1px solid transparent;
+  border-radius:10px;
+  padding:11px;
+  margin:4px 0;
+  background:transparent;
+  color:var(--muted);
+  text-align:left;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.history-item.active {
+  background:var(--panel2);
+  color:white;
+  border-color:var(--line);
+}
+.sidebar-note {
+  margin-top:28px;
+  padding:13px;
+  border-radius:12px;
+  background:var(--panel);
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.6;
+}
+.main {
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+}
+.tabs {
+  display:flex;
+  gap:8px;
+  padding:12px 15px;
+  border-bottom:1px solid var(--line);
+  background:var(--bg);
+}
+.tab {
+  flex:1;
+  padding:11px 8px;
+  border:1px solid transparent;
+  border-radius:11px;
+  background:transparent;
+  color:var(--muted);
+  font-size:13px;
+}
+.tab.active {
+  color:white;
+  background:var(--panel2);
+  border-color:var(--line);
+}
+.view {
+  display:none;
+  flex:1;
+  min-height:0;
+}
+.view.active { display:flex;flex-direction:column; }
+#chat {
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+  padding:22px 17px;
+  scroll-behavior:smooth;
+  overscroll-behavior:contain;
+}
+.welcome {
+  max-width:440px;
+  margin:28px auto;
+  text-align:center;
+  padding:15px;
+}
+.welcome-icon {
+  width:76px;height:76px;
+  margin:0 auto 18px;
+  display:grid;place-items:center;
+  font-size:36px;
+  border-radius:25px;
+  background:linear-gradient(145deg,#233c60,#182335);
+  border:1px solid #43618b;
+}
+.welcome h2 { font-size:24px;margin:0 0 12px; }
+.welcome p {
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.7;
+}
+.suggestions {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:22px;
+}
+.suggestion {
+  background:var(--panel);
+  border:1px solid var(--line);
+  color:#dbeafe;
+  border-radius:12px;
+  padding:12px;
+  font-size:12px;
+  line-height:1.5;
+  text-align:left;
+}
+.message {
+  max-width:88%;
+  margin:0 0 19px;
+  display:flex;
+  flex-direction:column;
+}
+.message.user { margin-left:auto;align-items:flex-end; }
+.message.bot { margin-right:auto;align-items:flex-start; }
+.sender {
+  color:var(--muted);
+  font-size:11px;
+  margin:0 5px 6px;
+}
+.bubble {
+  padding:12px 15px;
+  border-radius:17px;
+  font-size:15px;
+  line-height:1.65;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+.user .bubble {
+  background:#2459ad;
+  border-bottom-right-radius:5px;
+}
+.bot .bubble {
+  background:var(--panel2);
+  border:1px solid #34445a;
+  border-bottom-left-radius:5px;
+}
+.composer {
+  padding:12px 14px;
+  padding-bottom:max(12px,env(safe-area-inset-bottom));
+  background:var(--panel);
+  border-top:1px solid var(--line);
+}
+#inputArea {
+  display:flex;align-items:flex-end;gap:9px;
+  max-width:800px;margin:auto;
+}
+#message {
+  flex:1;min-width:0;
+  min-height:48px;max-height:130px;
+  resize:none;
+  border:1px solid var(--line);
+  border-radius:17px;
+  background:#101827;color:white;
+  padding:14px;
+  font-size:16px;
+  line-height:1.4;
+}
+#message::placeholder { color:#8ca0b8; }
+#sendBtn {
+  min-width:49px;height:49px;
+  border:0;border-radius:16px;
+  background:var(--blue);color:white;
+  font-size:23px;
+}
+#sendBtn:disabled { opacity:.5;cursor:wait; }
+.hint {
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.5;
+  text-align:center;
+  margin:9px 0 0;
+}
+.memory-view {
+  overflow-y:auto;
+  padding:18px;
+}
+.memory-heading { margin:4px 0 8px;font-size:21px; }
+.description {
+  font-size:13px;line-height:1.7;color:var(--muted);
+  margin:0 0 18px;
+}
+.memory-card {
+  padding:16px;
+  margin-bottom:13px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:var(--panel);
+}
+.memory-card h3 { font-size:14px;margin:0 0 9px; }
+.memory-card p {
+  color:var(--muted);font-size:13px;line-height:1.65;
+  margin:0;
+}
+#notes {
+  width:100%;
+  min-height:130px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:var(--bg);
+  color:var(--text);
+  font-size:14px;
+  line-height:1.6;
+  resize:vertical;
+}
+.action-row { display:flex;flex-wrap:wrap;gap:8px;margin-top:12px; }
+.primary-btn {
+  padding:11px 14px;
+  border:0;border-radius:10px;
+  background:var(--blue);color:white;
+}
+.secondary-btn {
+  padding:11px 14px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel2);color:white;
+}
+#notice {
+  color:var(--green);
+  font-size:12px;
+  margin-top:10px;
+}
+.mobile-history { display:none; }
+
+@media(max-width:650px) {
+  header { padding:11px 12px;gap:9px; }
+  .logo { width:43px;height:43px;font-size:23px; }
+  .brand h1 { font-size:16px; }
+  .brand p { font-size:11px; }
+  .top-actions .small-btn { padding:9px 8px;font-size:11px; }
+  .sidebar { display:none; }
+  .mobile-history {
+    display:flex;gap:7px;
+    padding:9px 12px;
+    overflow-x:auto;
+    border-bottom:1px solid var(--line);
+    background:#131e2d;
+  }
+  .mobile-history button {
+    flex-shrink:0;
+    max-width:180px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    padding:9px 12px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--muted);
+    font-size:12px;
+  }
+  .mobile-history button.active {
+    color:white;border-color:var(--blue);
+  }
+  #chat { padding:17px 12px; }
+  .welcome { margin:22px auto;padding:8px; }
+  .welcome h2 { font-size:22px; }
+  .suggestions { grid-template-columns:1fr 1fr; }
+  .message { max-width:92%; }
+  .bubble { font-size:14px;padding:11px 13px; }
+  .tabs { padding:9px 10px; }
+  .tab { padding:10px 5px;font-size:12px; }
+  .memory-view { padding:14px; }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo">✦</div>
+    <div class="brand">
+      <h1>Daneel Giskard</h1>
+      <p id="status">● Ang Kaibigan ni Daniel</p>
+    </div>
+    <div class="top-actions">
+      <button class="small-btn" id="exportBtn">Backup ↓</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+
+    <aside class="sidebar">
+      <button class="new-btn" id="newChatBtn">＋ Bagong usapan</button>
+      <div class="section-label">Mga nakaraang usapan</div>
+      <div id="history"></div>
+
+      <div class="sidebar-note">
+        <strong>Ang layunin ni Daneel</strong><br>
+        Kilalanin si Daniel sa pamamagitan ng mga tunay nilang pag-uusap,
+        at panatilihin ang pagkakaiba ng alaala at hinuha.
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="mobile-history" id="mobileHistory"></div>
+
+      <nav class="tabs">
+        <button class="tab active" data-view="chatView">💬 Usapan</button>
+        <button class="tab" data-view="memoryView">🧠 Pagkakakilala</button>
+      </nav>
+
+      <section class="view active" id="chatView">
+        <div id="chat"></div>
+
+        <div class="composer">
+          <div id="inputArea">
+            <textarea id="message" rows="1"
+              placeholder="Kuwento ka lang, Daniel..."
+              aria-label="Mensahe kay Daneel"></textarea>
+            <button id="sendBtn" aria-label="Ipadala">↑</button>
+          </div>
+          <p class="hint">
+            Ang pag-uusap na ito ay personal mong diary.
+            Mag-backup upang mapangalagaan ang mga naitala.
+          </p>
+        </div>
+      </section>
+
+      <section class="view memory-view" id="memoryView">
+        <h2 class="memory-heading">Pagkakakilala kay Daniel</h2>
+        <p class="description">
+          Hindi kailangang alam mo na ang lahat tungkol sa sarili mo.
+          Maaaring matutuhan ang mga pattern sa paglipas ng panahon.
+        </p>
+
+        <div class="memory-card">
+          <h3>📚 Mga tunay na pag-uusap</h3>
+          <p id="conversationCount">
+            Naka-save sa browser ang mga mensahe mo.
+          </p>
+        </div>
+
+        <div class="memory-card">
+          <h3>🔎 Mga obserbasyon ni Daneel</h3>
+          <p>
+            Sa kasalukuyan, hindi pa awtomatikong gumagawa ng personal
+            na profile ang backend. Hindi ako magpapanggap na mayroon
+            na akong pangmatagalang memoryang hindi pa naitatayo.
+          </p>
+        </div>
+
+        <div class="memory-card">
+          <h3>✍️ Mga tala tungkol sa sarili</h3>
+          <p style="margin-bottom:12px">
+            Maaari kang magtala rito ng mga ideya o obserbasyong nais
+            mong mapanatili sa browser na ito.
+          </p>
+          <textarea id="notes"
+            placeholder="Halimbawa: Isang paniniwala ko noon, at kung bakit nagbago..."></textarea>
+          <div class="action-row">
+            <button class="primary-btn" id="saveNotes">I-save ang tala</button>
+            <button class="secondary-btn" id="downloadNotes">I-download</button>
+          </div>
+          <div id="notice" aria-live="polite"></div>
+        </div>
+
+        <div class="memory-card">
+          <h3>🔐 Tungkol sa iyong data</h3>
+          <p>
+            Ang mga chat at tala ay iniimbak sa local storage ng browser
+            na ito. Maaaring mawala ang mga ito kapag nilinis ang browser
+            data. Hindi ito kapalit ng backup, at hindi nito ginagarantiyang
+            pribado ang pagproseso ng mensahe sa external AI server.
+          </p>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+const API_URL = "https://mychatbot-ct9m.onrender.com/chat";
+const STORAGE_KEY = "daneel_giskard_diary_v1";
+
+const $ = id => document.getElementById(id);
+const chat = $("chat");
+const input = $("message");
+const sendBtn = $("sendBtn");
+const status = $("status");
+
+let busy = false;
+let state = loadState();
+
+function makeId() {
+  return Date.now().toString(36) +
+    Math.random().toString(36).slice(2, 8);
+}
+
+function newConversation() {
+  return {
+    id: makeId(),
+    title: "Bagong usapan",
+    createdAt: new Date().toISOString(),
+    messages: []
+  };
+}
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed.conversations)) {
+        if (!parsed.conversations.length) {
+          parsed.conversations.push(newConversation());
+        }
+        if (!parsed.conversations.some(c => c.id === parsed.activeId)) {
+          parsed.activeId = parsed.conversations[0].id;
+        }
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn("Hindi mabasa ang lokal na diary.", e);
+  }
+
+  const first = newConversation();
+  return {
+    conversations: [first],
+    activeId: first.id,
+    notes: ""
+  };
+}
+
+function persist() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return true;
+  } catch (e) {
+    console.error("Hindi ma-save ang diary.", e);
+    status.textContent = "● Hindi na-save — mag-backup";
+    return false;
+  }
+}
+
+function activeConversation() {
+  return state.conversations.find(c => c.id === state.activeId);
+}
+
+function saveConversation() {
+  const c = activeConversation();
+  if (!c) return;
+
+  const firstUser = c.messages.find(m => m.role === "user");
+  if (firstUser) {
+    c.title = firstUser.text.slice(0, 34) +
+      (firstUser.text.length > 34 ? "…" : "");
+  }
+  persist();
+  renderHistory();
+}
+
+function renderHistory() {
+  const desktop = $("history");
+  const mobile = $("mobileHistory");
+  desktop.replaceChildren();
+  mobile.replaceChildren();
+
+  [...state.conversations].reverse().forEach(c => {
+    const a = document.createElement("button");
+    a.className = "history-item" +
+      (c.id === state.activeId ? " active" : "");
+    a.textContent = c.title;
+    a.title = c.title;
+    a.onclick = () => switchConversation(c.id);
+    desktop.appendChild(a);
+
+    const b = document.createElement("button");
+    b.className = c.id === state.activeId ? "active" : "";
+    b.textContent = c.title;
+    b.onclick = () => switchConversation(c.id);
+    mobile.appendChild(b);
+  });
+}
+
+function switchConversation(id) {
+  state.activeId = id;
+  persist();
+  renderHistory();
+  renderChat();
+  showView("chatView");
+}
+
+function showView(viewId) {
+  document.querySelectorAll(".view").forEach(v => {
+    v.classList.toggle("active", v.id === viewId);
+  });
+  document.querySelectorAll(".tab").forEach(t => {
+    t.classList.toggle("active", t.dataset.view === viewId);
+  });
+  if (viewId === "memoryView") updateMemoryView();
+}
+
+function updateMemoryView() {
+  const count = state.conversations.reduce(
+    (sum, c) => sum + c.messages.length, 0
+  );
+  $("conversationCount").textContent =
+    state.conversations.length + " usapan at " + count +
+    " mensahe ang nasa lokal na diary na ito.";
+  $("notes").value = state.notes || "";
+}
+
+function addMessageElement(role, text) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "message " + role;
+
+  const sender = document.createElement("div");
+  sender.className = "sender";
+  sender.textContent = role === "user" ? "Daniel" : "Daneel Giskard";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = String(text);
+
+  wrapper.append(sender, bubble);
+  chat.appendChild(wrapper);
+  return wrapper;
+}
+
+function renderChat() {
+  chat.replaceChildren();
+  const c = activeConversation();
+  if (!c) return;
+
+  if (!c.messages.length) {
+    const welcome = document.createElement("div");
+    welcome.className = "welcome";
+
+    const icon = document.createElement("div");
+    icon.className = "welcome-icon";
+    icon.textContent = "✦";
+
+    const title = document.createElement("h2");
+    title.textContent = "Kumusta, Daniel.";
+
+    const desc = document.createElement("p");
+    desc.textContent =
+      "Ako si Daneel Giskard, ang kaibigan mo. " +
+      "Dito puwede kang magkuwento, magtanong, at magsiyasat ng mga ideya. " +
+      "Unti-unti nating bubuuin ang diary ng iyong mga pag-iisip.";
+
+    const suggestions = document.createElement("div");
+    suggestions.className = "suggestions";
+
+    [
+      "May ideya akong gusto kong siyasatin.",
+      "May natutuhan ako tungkol sa buhay.",
+      "Gusto kong balikan ang isang paniniwala.",
+      "Tulungan mo akong pag-isipan ang isang problema."
+    ].forEach(text => {
+      const button = document.createElement("button");
+      button.className = "suggestion";
+      button.textContent = text;
+      button.onclick = () => {
+        input.value = text;
+        input.focus();
+        resizeInput();
+      };
+      suggestions.appendChild(button);
+    });
+
+    welcome.append(icon, title, desc, suggestions);
+    chat.appendChild(welcome);
+  } else {
+    c.messages.forEach(m => {
+      addMessageElement(m.role, m.text);
+    });
+  }
+
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text || busy) return;
+
+  let c = activeConversation();
+  if (!c) return;
+
+  c.messages.push({
+    role: "user",
+    text,
+    timestamp: new Date().toISOString()
+  });
+
+  input.value = "";
+  resizeInput();
+  saveConversation();
+  renderChat();
+
+  busy = true;
+  sendBtn.disabled = true;
+  status.textContent = "● Nag-iisip si Daneel...";
+
+  const loading = addMessageElement("bot", "Sandali lang, Daniel…");
+  chat.scrollTop = chat.scrollHeight;
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error("Server response: " + response.status);
+    }
+    if (typeof data.reply !== "string") {
+      throw new Error("Walang valid na reply sa server response.");
+    }
+
+    loading.querySelector(".bubble").textContent = data.reply;
+
+    c = activeConversation();
+    c.messages.push({
+      role: "bot",
+      text: data.reply,
+      timestamp: new Date().toISOString()
+    });
+
+    saveConversation();
+    status.textContent = "● Handa nang makinig";
+
+  } catch (error) {
+    console.error(error);
+
+    const errorText =
+      "Hindi ko makuha ang sagot mula sa AI server, Daniel. " +
+      "Maaaring may problema sa koneksyon o server. " +
+      "Napanatili ang iyong mensahe sa lokal na diary.";
+
+    loading.querySelector(".bubble").textContent = errorText;
+
+    // Itala rin ang error bilang tugon para makita sa history.
+    c = activeConversation();
+    c.messages.push({
+      role: "bot",
+      text: errorText,
+      timestamp: new Date().toISOString(),
+      error: true
+    });
+
+    saveConversation();
+    status.textContent = "● May problema sa koneksyon";
+  } finally {
+    busy = false;
+    sendBtn.disabled = false;
+    chat.scrollTop = chat.scrollHeight;
+    updateMemoryView();
+  }
+}
+
+function resizeInput() {
+  input.style.height = "48px";
+  input.style.height = Math.min(input.scrollHeight, 130) + "px";
+}
+
+$("newChatBtn").addEventListener("click", () => {
+  if (busy) return;
+  const c = newConversation();
+  state.conversations.push(c);
+  state.activeId = c.id;
+  persist();
+  renderHistory();
+  renderChat();
+  showView("chatView");
+  input.focus();
+});
+
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => showView(tab.dataset.view));
+});
+
+sendBtn.addEventListener("click", sendMessage);
+
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+input.addEventListener("input", resizeInput);
+
+$("saveNotes").addEventListener("click", () => {
+  state.notes = $("notes").value;
+  if (persist()) {
+    $("notice").textContent = "Nai-save sa browser na ito. ✓";
+  } else {
+    $("notice").textContent =
+      "Hindi na-save. Mag-backup o magpalaya ng storage space.";
+  }
+});
+
+function downloadFile(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+$("exportBtn").addEventListener("click", () => {
+  const backup = {
+    app: "Daneel Giskard",
+    exportedAt: new Date().toISOString(),
+    ...state
+  };
+  downloadFile(
+    "daneel-diary-backup.json",
+    JSON.stringify(backup, null, 2),
+    "application/json"
+  );
+});
+
+$("downloadNotes").addEventListener("click", () => {
+  state.notes = $("notes").value;
+  persist();
+  downloadFile(
+    "daneel-personal-notes.txt",
+    state.notes || "",
+    "text/plain;charset=utf-8"
+  );
+});
+
+renderHistory();
+renderChat();
+updateMemoryView();
+</script>
+</body>
+</html>
