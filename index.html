@@ -525,10 +525,26 @@ auth.onAuthStateChanged(user => {
   }
 });
 
-auth.getRedirectResult().catch(error => {
-  console.error("Google sign-in error:", error);
-  alert("May problema sa Google sign-in: " + error.message);
-});
+
+auth.getRedirectResult()
+  .then(result => {
+    if (result && result.user) {
+      alert(
+        "Matagumpay ang sign-in: " +
+        (result.user.email || result.user.uid)
+      );
+    } else {
+      console.log("Walang redirect result na natanggap.");
+    }
+  })
+  .catch(error => {
+    console.error("Google sign-in error:", error.code, error.message);
+    alert(
+      "Sign-in error code: " + error.code +
+      "\nDetalye: " + error.message
+    );
+  });
+
   
 const chat = $("chat");
 const input = $("message");
