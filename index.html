@@ -7,6 +7,9 @@
 <meta name="theme-color" content="#101827">
 <title>Daneel Giskard — Ang Kaibigan ni Daniel</title>
 
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+
 <style>
 :root {
   --bg:#101827;
@@ -375,8 +378,11 @@ header {
       <p id="status">● Ang Kaibigan ni Daniel</p>
     </div>
     <div class="top-actions">
-      <button class="small-btn" id="exportBtn">Backup ↓</button>
-    </div>
+  <button class="small-btn" id="googleSignInBtn">
+    Mag-sign in sa Google
+  </button>
+  <button class="small-btn" id="exportBtn">Backup ↓</button>
+</div>
   </header>
 
   <div class="workspace">
@@ -475,6 +481,55 @@ const API_URL = "https://daneel-giskard.onrender.com/chat";
 const STORAGE_KEY = "daneel_giskard_diary_v1";
 
 const $ = id => document.getElementById(id);
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDNL2mxIH-ry4dClZidMOpxBe-aMeVLeQo",
+  authDomain: "daneel-giskard.firebaseapp.com",
+  projectId: "daneel-giskard",
+  storageBucket: "daneel-giskard.firebasestorage.app",
+  messagingSenderId: "801361334065",
+  appId: "1:801361334065:web:b9280c95acc958ea506a10"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+let currentUser = null;
+
+const googleSignInBtn = $("googleSignInBtn");
+const statusElement = $("status");
+
+googleSignInBtn.addEventListener("click", async () => {
+  try {
+    if (currentUser) {
+      await auth.signOut();
+    } else {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await auth.signInWithRedirect(provider);
+    }
+  } catch (error) {
+    alert("Hindi nakumpleto ang Google sign-in: " + error.message);
+  }
+});
+
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+
+  if (user) {
+    googleSignInBtn.textContent = "Mag-sign out";
+    statusElement.textContent =
+      "● Naka-sign in: " + (user.displayName || "Google user");
+  } else {
+    googleSignInBtn.textContent = "Mag-sign in sa Google";
+    statusElement.textContent = "● Hindi pa naka-sign in";
+  }
+});
+
+auth.getRedirectResult().catch(error => {
+  console.error("Google sign-in error:", error);
+  alert("May problema sa Google sign-in: " + error.message);
+});
+  
 const chat = $("chat");
 const input = $("message");
 const sendBtn = $("sendBtn");
