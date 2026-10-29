@@ -32,8 +32,6 @@ admin.initializeApp({
 });
 
 // Firebase UID ng user na napatunayan ng server.
-async function verifyOptionalAuth(req, res, next) {
-
 async function requireAuth(req, res, next) {
   const authorization = req.headers.authorization || "";
   const match = authorization.match(/^Bearer (.+)$/i);
