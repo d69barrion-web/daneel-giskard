@@ -407,6 +407,29 @@ header {
         <button class="tab" data-view="memoryView">🧠 Pagkakakilala</button>
       </nav>
 
+      
+<section id="profileEditor" style="display:none; padding:16px; margin:12px 0; border:1px solid #344256; border-radius:12px;">
+  <h3 style="margin-top:0;">Pagkakakilanlan mo</h3>
+  <p style="font-size:14px; opacity:0.85;">
+    Ano ang gusto mong itawag sa iyo ni Daneel?
+  </p>
+
+  <input
+    id="preferredNameInput"
+    type="text"
+    maxlength="40"
+    placeholder="Halimbawa: Daniel"
+    style="width:100%; box-sizing:border-box; padding:12px; border-radius:8px; margin-bottom:10px;"
+  >
+
+  <button id="savePreferredNameBtn" class="small-btn">
+    I-save ang pangalan
+  </button>
+
+  <p id="profileMessage" style="font-size:13px;"></p>
+</section>
+      
+
       <section class="view active" id="chatView">
         <div id="chat"></div>
 
@@ -538,9 +561,13 @@ auth.onAuthStateChanged(user => {
     statusElement.textContent =
       "● Naka-sign in: " + (user.displayName || "Google user");
     loadDaneelProfile();
+    profileEditor.style.display = "block";
   } else {
     googleSignInBtn.textContent = "Mag-sign in sa Google";
     statusElement.textContent = "● Hindi pa naka-sign in";
+    profileEditor.style.display = "none";
+preferredNameInput.value = "";
+preferredName = "";
   }
 });
 
@@ -567,6 +594,7 @@ async function loadDaneelProfile() {
     }
 
     preferredName = data.preferredName || "";
+    preferredNameInput.value = preferredName;
 
     console.log("Daneel profile loaded.");
   } catch (error) {
@@ -628,6 +656,23 @@ auth.getRedirectResult()
     );
   });
 
+
+const profileEditor = $("profileEditor");
+const preferredNameInput = $("preferredNameInput");
+const savePreferredNameBtn = $("savePreferredNameBtn");
+const profileMessage = $("profileMessage");
+
+savePreferredNameBtn.addEventListener("click", async () => {
+  const name = preferredNameInput.value.trim();
+
+  const saved = await saveDaneelPreferredName(name);
+
+  if (saved) {
+    profileMessage.textContent = name
+      ? "Naka-save na ang gusto mong pangalan."
+      : "Na-clear na ang pangalan mo.";
+  }
+});
   
 const chat = $("chat");
 const input = $("message");
