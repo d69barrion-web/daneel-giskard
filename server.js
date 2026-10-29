@@ -83,6 +83,95 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+
+/* =========================================
+   DANEEL USER PROFILE
+   Bawat Firebase UID ay may sariling profile.
+========================================= */
+
+// Kunin ang profile ng naka-sign-in na user.
+app.get("/profile", requireAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+
+    const profileRef = admin
+      .firestore()
+      .collection("users")
+      .doc(uid);
+
+    const profileDoc = await profileRef.get();
+
+    if (!profileDoc.exists) {
+      return res.json({
+        preferredName: "",
+        googleName: req.user.name || ""
+      });
+    }
+
+    const profile = profileDoc.data();
+
+    return res.json({
+      preferredName: profile.preferredName || "",
+      googleName: req.user.name || ""
+    });
+  } catch (error) {
+    console.error("Profile read error:", error.message);
+
+    return res.status(500).json({
+      error: "Hindi makuha ang profile."
+    });
+  }
+});
+
+
+// I-save o baguhin ang gustong pangalan ng user.
+app.patch("/profile", requireAuth, async (req, res) => {
+  try {
+    const preferredName = req.body?.preferredName;
+
+    if (typeof preferredName !== "string") {
+      return res.status(400).json({
+        error: "Hindi wastong pangalan."
+      });
+    }
+
+    const cleanName = preferredName.trim();
+
+    if (cleanName.length > 40) {
+      return res.status(400).json({
+        error: "Hanggang 40 characters lamang ang pangalan."
+      });
+    }
+
+    const uid = req.user.uid;
+
+    const profileRef = admin
+      .firestore()
+      .collection("users")
+      .doc(uid);
+
+    await profileRef.set(
+      {
+        preferredName: cleanName,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      },
+      { merge: true }
+    );
+
+    return res.json({
+      success: true,
+      preferredName: cleanName
+    });
+  } catch (error) {
+    console.error("Profile update error:", error.message);
+
+    return res.status(500).json({
+      error: "Hindi ma-save ang profile."
+    });
+  }
+});
+
+
 app.post("/chat", requireAuth, async (req, res) => {
   try {
     const userMessage = req.body?.message;
