@@ -266,7 +266,9 @@ app.post("/chat", requireAuth, async (req, res) => {
     const namePatterns = [
       /^(.+?)\s+ang gusto kong itawag mo sa akin[.!]?$/i,
       /^tawagin mo akong\s+(.+?)[.!]?$/i,
-      /^gusto kong itawag mo sa akin si\s+(.+?)[.!]?$/i
+      /^gusto kong itawag mo sa akin si\s+(.+?)[.!]?$/i,
+      /^gusto (?:ko sanang|ko sana|kong|ko)\s*,?\s*["']?(.+?)["']?\s+ang itawag mo (?:sa akin|sakin|sa kin|sa 'kin)[.!]?$/i,
+      /^gusto (?:ko sanang|ko sana|kong|ko)\s*,?\s*(.+?)\s+itawag mo (?:sa akin|sakin|sa kin|sa 'kin)[.!]?$/i
     ];
 
     for (const pattern of namePatterns) {
