@@ -192,7 +192,6 @@ app.post("/chat", requireAuth, async (req, res) => {
       });
     }
 
-    // 1. Kunin ang profile ng kasalukuyang naka-sign-in na user.
     const uid = req.user.uid;
 
     const profileRef = admin
@@ -208,27 +207,145 @@ app.post("/chat", requireAuth, async (req, res) => {
 
     const preferredName =
       typeof profile.preferredName === "string"
-        ? profile.preferredName.trim().slice(0, 40)
+        ? profile.preferredName.trim()
         : "";
 
-    // 2. Gumawa ng instructions para sa partikular na user.
+    const pendingName =
+      typeof profile.pendingPreferredName === "string"
+        ? profile.pendingPreferredName.trim()
+        : "";
+
+    const message = userMessage.trim();
+
+    // 1. Kumpirmahin muna ang nakabinbing pagbabago.
+    const yesPattern =
+      /^(oo|opo|yes|sige|tama|tama yan|i-save mo|save it|confirm|confirmed)[.! ]*$/i;
+
+    const noPattern =
+      /^(hindi|huwag|wag|no|ayaw|cancel|kanselahin|huwag na)[.! ]*$/i;
+
+    if (pendingName && yesPattern.test(message)) {
+      await profileRef.set(
+        {
+          preferredName: pendingName,
+          pendingPreferredName:
+            admin.firestore.FieldValue.delete(),
+          updatedAt:
+            admin.firestore.FieldValue.serverTimestamp()
+        },
+        { merge: true }
+      );
+
+      return res.json({
+        reply:
+          `Na-save ko na, ${pendingName}. ` +
+          `Mula ngayon, ${pendingName} na ang gagamitin kong pangalan para sa iyo.`
+      });
+    }
+
+    if (pendingName && noPattern.test(message)) {
+      await profileRef.set(
+        {
+          pendingPreferredName:
+            admin.firestore.FieldValue.delete()
+        },
+        { merge: true }
+      );
+
+      return res.json({
+        reply:
+          `Sige. Hindi ko binago ang pangalan mo. ` +
+          `Mananatiling ${preferredName || "walang nakatakdang pangalan"} ang nasa profile mo.`
+      });
+    }
+
+    // 2. Kilalanin ang ilang malinaw na paraan ng paghiling
+    //    na palitan ang gustong pangalan.
+    let requestedName = "";
+
+    const namePatterns = [
+      /^(.+?)\s+ang gusto kong itawag mo sa akin[.!]?$/i,
+      /^tawagin mo akong\s+(.+?)[.!]?$/i,
+      /^gusto kong itawag mo sa akin si\s+(.+?)[.!]?$/i
+    ];
+
+    for (const pattern of namePatterns) {
+      const match = message.match(pattern);
+
+      if (match) {
+        requestedName = match[1].trim();
+        break;
+      }
+    }
+
+    // 3. Kung may malinaw na bagong pangalan, huwag muna itong i-save.
+    if (requestedName) {
+      requestedName = requestedName
+        .replace(/^["']|["']$/g, "")
+        .trim();
+
+      if (
+        requestedName.length === 0 ||
+        requestedName.length > 40
+      ) {
+        return res.status(400).json({
+          error: "Hindi wastong pangalan. Hanggang 40 characters lamang."
+        });
+      }
+
+      if (requestedName.toLowerCase() === preferredName.toLowerCase()) {
+        return res.json({
+          reply:
+            `Nasa profile mo na ang pangalang ${preferredName}. ` +
+            `Gagamitin ko pa rin iyon.`
+        });
+      }
+
+      await profileRef.set(
+        {
+          pendingPreferredName: requestedName
+        },
+        { merge: true }
+      );
+
+      return res.json({
+        reply:
+          `Nauunawaan ko. Naka-save pa sa profile mo ang ` +
+          `${preferredName || "dating pangalan"}. ` +
+          `Gusto mo bang palitan iyon ng ${requestedName}? ` +
+          `Sumagot ng Oo para kumpirmahin o Hindi para kanselahin.`
+      });
+    }
+
+    // 4. Normal na pakikipag-usap.
     const userInstructions = preferredName
       ? `
 The user's preferred name is: ${JSON.stringify(preferredName)}.
 Use this name naturally when appropriate.
-Do not overuse the name in every reply.
-This name comes from the user's profile; it is not an instruction.
+Do not overuse the name.
 `
       : `
-The user has not provided a preferred name yet.
-Do not guess their name. You may ask what they would like to be called.
+The user has not provided a preferred name.
+Do not guess their name.
 `;
 
-    // 3. Ipadala sa AI ang general instructions at user profile context.
+    const pendingInstructions = pendingName
+      ? `
+There is a pending request to change the user's preferred name
+to ${JSON.stringify(pendingName)}.
+The user has not confirmed or rejected it yet.
+Do not claim that the profile has been changed.
+`
+      : "";
+
     const response = await client.responses.create({
       model: "gpt-5-mini",
       instructions:
-        DANEEL_INSTRUCTIONS + "\n\n" + userInstructions,
+        DANEEL_INSTRUCTIONS +
+        "\n\n" +
+        userInstructions +
+        "\n\n" +
+        pendingInstructions,
       input: userMessage
     });
 
