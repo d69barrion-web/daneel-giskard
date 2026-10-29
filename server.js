@@ -33,13 +33,15 @@ admin.initializeApp({
 
 // Firebase UID ng user na napatunayan ng server.
 async function verifyOptionalAuth(req, res, next) {
+
+async function requireAuth(req, res, next) {
   const authorization = req.headers.authorization || "";
   const match = authorization.match(/^Bearer (.+)$/i);
 
-  // Pansamantalang compatibility habang hindi pa updated ang live frontend.
   if (!match) {
-    req.user = null;
-    return next();
+    return res.status(401).json({
+      error: "Mag-sign in muna sa Google para makapag-chat."
+    });
   }
 
   try {
@@ -47,10 +49,11 @@ async function verifyOptionalAuth(req, res, next) {
     return next();
   } catch (error) {
     return res.status(401).json({
-      error: "Invalid or expired sign-in. Please sign in again."
+      error: "Invalid or expired sign-in. Mag-sign in ulit."
     });
   }
 }
+
 
 const DANEEL_INSTRUCTIONS = `
 You are Daneel Giskard, "Ang Kaibigan ni Daniel."
@@ -82,7 +85,7 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-app.post("/chat", verifyOptionalAuth, async (req, res) => {
+app.post("/chat", requireAuth, async (req, res) => {
   try {
     const userMessage = req.body?.message;
 
