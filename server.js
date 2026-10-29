@@ -239,7 +239,7 @@ app.post("/chat", requireAuth, async (req, res) => {
       return res.json({
         reply:
           `Na-save ko na, ${pendingName}. ` +
-          `Mula ngayon, ${pendingName} na ang gagamitin kong pangalan para sa iyo.`
+          `Mula ngayon, ${pendingName} na ang itatawag ko sa iyo. 👍🏻😊`
       });
     }
 
@@ -254,8 +254,8 @@ app.post("/chat", requireAuth, async (req, res) => {
 
       return res.json({
         reply:
-          `Sige. Hindi ko binago ang pangalan mo. ` +
-          `Mananatiling ${preferredName || "walang nakatakdang pangalan"} ang nasa profile mo.`
+          `Sige. Wala akong binagong pangalan mo. ` +
+          `Mananatiling ${preferredName || "walang nakatakdang pangalan"} ang nasa pagkakakilala ko sa iyo.`
       });
     }
 
