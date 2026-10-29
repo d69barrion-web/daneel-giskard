@@ -264,6 +264,7 @@ app.post("/chat", requireAuth, async (req, res) => {
     let requestedName = "";
 
     const namePatterns = [
+      /^tawagin mo na lang akong\s+(.+?)[.!]?$/i,
       /^(.+?)\s+ang gusto kong itawag mo sa akin[.!]?$/i,
       /^tawagin mo akong\s+(.+?)[.!]?$/i,
       /^gusto kong itawag mo sa akin si\s+(.+?)[.!]?$/i,
