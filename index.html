@@ -784,16 +784,28 @@ async function sendMessage() {
   chat.scrollTop = chat.scrollHeight;
 
   try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text })
-    });
+    
+if (!currentUser) {
+  throw new Error("Hindi pa naka-sign in sa Google.");
+}
+
+const idToken = await currentUser.getIdToken();
+
+const response = await fetch(API_URL, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${idToken}`
+  },
+  body: JSON.stringify({ message: text })
+});
+
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error("Server response: " + response.status);
+  const details = data.error || response.statusText || "Hindi alam ang dahilan";
+  throw new Error("Server response " + response.status + ": " + details);
     }
     if (typeof data.reply !== "string") {
       throw new Error("Walang valid na reply sa server response.");
@@ -815,9 +827,9 @@ async function sendMessage() {
     console.error(error);
 
     const errorText =
-      "Hindi ko makuha ang sagot mula sa AI server, Daniel. " +
-      "Maaaring may problema sa koneksyon o server. " +
-      "Napanatili ang iyong mensahe sa lokal na diary.";
+  "Hindi ko makuha ang sagot mula sa AI server.\n" +
+  "Detalye: " + error.message +
+  "\nNapanatili ang iyong mensahe sa lokal na diary.";
 
     loading.querySelector(".bubble").textContent = errorText;
 
