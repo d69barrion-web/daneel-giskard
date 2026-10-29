@@ -315,7 +315,7 @@ app.post("/chat", requireAuth, async (req, res) => {
           `Nauunawaan ko. Naka-save pa sa profile mo ang ` +
           `${preferredName || "dating pangalan"}. ` +
           `Gusto mo bang palitan iyon ng ${requestedName}? ` +
-          `Sumagot ng Oo para kumpirmahin o Hindi para kanselahin.`
+          `Sabihin mo lang.😊`
       });
     }
 
