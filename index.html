@@ -478,6 +478,10 @@ header {
 
 <script>
 const API_URL = "https://daneel-giskard.onrender.com/chat";
+
+const PROFILE_URL = "https://daneel-giskard.onrender.com/profile";
+let preferredName = "";
+  
 const STORAGE_KEY = "daneel_giskard_diary_v1";
 
 const $ = id => document.getElementById(id);
@@ -533,6 +537,7 @@ auth.onAuthStateChanged(user => {
     googleSignInBtn.textContent = "Mag-sign out";
     statusElement.textContent =
       "● Naka-sign in: " + (user.displayName || "Google user");
+    loadDaneelProfile();
   } else {
     googleSignInBtn.textContent = "Mag-sign in sa Google";
     statusElement.textContent = "● Hindi pa naka-sign in";
@@ -540,6 +545,70 @@ auth.onAuthStateChanged(user => {
 });
 
 
+async function loadDaneelProfile() {
+  if (!currentUser) {
+    preferredName = "";
+    return;
+  }
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(PROFILE_URL, {
+      headers: {
+        "Authorization": `Bearer ${idToken}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi makuha ang profile.");
+    }
+
+    preferredName = data.preferredName || "";
+
+    console.log("Daneel profile loaded.");
+  } catch (error) {
+    console.error("Profile load error:", error.message);
+  }
+}
+
+async function saveDaneelPreferredName(name) {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return false;
+  }
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(PROFILE_URL, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify({
+        preferredName: name
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi ma-save ang pangalan.");
+    }
+
+    preferredName = data.preferredName;
+    alert("Na-save na ang pangalan mo, " + (preferredName || "kaibigan") + "!");
+    return true;
+  } catch (error) {
+    alert("Hindi na-save ang profile: " + error.message);
+    return false;
+  }
+}
+  
 auth.getRedirectResult()
   .then(result => {
     if (result && result.user) {
