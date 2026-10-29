@@ -499,18 +499,32 @@ let currentUser = null;
 const googleSignInBtn = $("googleSignInBtn");
 const statusElement = $("status");
 
+
 googleSignInBtn.addEventListener("click", async () => {
   try {
     if (currentUser) {
       await auth.signOut();
     } else {
       const provider = new firebase.auth.GoogleAuthProvider();
-      await auth.signInWithRedirect(provider);
+      const result = await auth.signInWithPopup(provider);
+
+      currentUser = result.user;
+
+      alert(
+        "Matagumpay ang sign-in!\n" +
+        (currentUser.email || currentUser.uid)
+      );
     }
   } catch (error) {
-    alert("Hindi nakumpleto ang Google sign-in: " + error.message);
+    console.error("Google sign-in error:", error.code, error.message);
+
+    alert(
+      "Sign-in error code: " + (error.code || "unknown") +
+      "\nDetalye: " + error.message
+    );
   }
 });
+
 
 auth.onAuthStateChanged(user => {
   currentUser = user;
