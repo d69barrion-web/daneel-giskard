@@ -8,7 +8,7 @@ const app = express();
 
 app.use(cors({
   origin: "https://d69barrion-web.github.io",
-  methods: ["GET", "POST"],
+  methods: ["GET", "POST", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
