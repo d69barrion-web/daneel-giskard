@@ -453,6 +453,56 @@ app.post("/conversations", requireAuth, async (req, res) => {
   }
 });
 
+
+// Kunin ang mga mensahe ng isang partikular na conversation.
+app.get("/conversations/:conversationId/messages", requireAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const conversationId = req.params.conversationId;
+
+    const conversationRef = admin
+      .firestore()
+      .collection("users")
+      .doc(uid)
+      .collection("conversations")
+      .doc(conversationId);
+
+    const conversationDoc = await conversationRef.get();
+
+    if (!conversationDoc.exists) {
+      return res.status(404).json({
+        error: "Hindi makita ang conversation."
+      });
+    }
+
+    const messagesRef = conversationRef.collection("messages");
+
+    const snapshot = await messagesRef
+      .orderBy("createdAtMs", "asc")
+      .get();
+
+    const messages = snapshot.docs.map(doc => {
+      const data = doc.data();
+
+      return {
+        id: doc.id,
+        role: data.role,
+        content: data.content,
+        createdAtMs: data.createdAtMs || 0
+      };
+    });
+
+    return res.json({ messages });
+
+  } catch (error) {
+    console.error("Conversation messages error:", error.message);
+
+    return res.status(500).json({
+      error: "Hindi makuha ang mga mensahe ng conversation."
+    });
+  }
+});
+
 app.get("/history", requireAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
