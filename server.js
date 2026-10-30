@@ -282,7 +282,7 @@ app.post("/chat", requireAuth, async (req, res) => {
     }
     
     
-    // Normal na pakikipag-usap.
+        // Normal na pakikipag-usap.
     const userInstructions = preferredName
       ? `
 The user's preferred name is: ${JSON.stringify(preferredName)}.
@@ -294,23 +294,12 @@ The user has not provided a preferred name.
 Do not guess their name.
 `;
 
-    const pendingInstructions = pendingName
-      ? `
-There is a pending request to change the user's preferred name
-to ${JSON.stringify(pendingName)}.
-The user has not confirmed or rejected it yet.
-Do not claim that the profile has been changed.
-`
-      : "";
-
     const response = await client.responses.create({
       model: "gpt-5-mini",
       instructions:
         DANEEL_INSTRUCTIONS +
         "\n\n" +
-        userInstructions +
-        "\n\n" +
-        pendingInstructions,
+        userInstructions,
       input: userMessage
     });
 
