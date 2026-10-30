@@ -122,6 +122,37 @@ header {
   color:white;
   border-color:var(--line);
 }
+  .history-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.history-row .history-item {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  margin: 4px 0;
+}
+
+.history-menu-btn {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 38px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.history-menu-btn:hover {
+  background: var(--panel2);
+  color: white;
+}
 .sidebar-note {
   margin-top:28px;
   padding:13px;
