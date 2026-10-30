@@ -255,6 +255,31 @@ app.post("/chat", requireAuth, async (req, res) => {
     
     const message = userMessage.trim();
 
+        // Kunin ang huling 20 mensahe ng user mula sa Firestore.
+    const messagesRef = admin
+      .firestore()
+      .collection("users")
+      .doc(uid)
+      .collection("conversations")
+      .doc("main")
+      .collection("messages");
+
+    const historySnapshot = await messagesRef
+      .orderBy("createdAt", "desc")
+      .limit(20)
+      .get();
+
+    const conversationHistory = historySnapshot.docs
+      .reverse()
+      .map(doc => {
+        const data = doc.data();
+
+        return {
+          role: data.role,
+          content: data.content
+        };
+      });
+
     // Tukuyin kung humihiling ang user na palitan
     // ang pangalan na ginagamit ni Daneel sa pagtawag sa kanya.
     const nameChangePatterns = [
