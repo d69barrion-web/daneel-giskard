@@ -638,7 +638,8 @@ auth.onAuthStateChanged(user => {
     googleSignInBtn.textContent = "Mag-sign out";
     statusElement.textContent =
       "● Naka-sign in: " + (user.displayName || "Google user");
-    loadDaneelProfile();
+        loadDaneelProfile();
+    loadConversationHistory();
   } else {
     googleSignInBtn.textContent = "Mag-sign in sa Google";
     statusElement.textContent = "● Hindi pa naka-sign in";
@@ -676,6 +677,41 @@ async function loadDaneelProfile() {
     console.log("Daneel profile loaded.");
   } catch (error) {
     console.error("Profile load error:", error.message);
+  }
+}
+
+async function loadConversationHistory() {
+  if (!currentUser) return;
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(
+      "https://daneel-giskard.onrender.com/history",
+      {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Hindi makuha ang conversation history.");
+    }
+
+    const data = await response.json();
+
+    // Linisin muna ang kasalukuyang conversation display.
+    chat.innerHTML = "";
+
+    // Ibalik ang mga mensahe mula sa Firestore.
+    for (const message of data.messages) {
+      addMessageElement(message.role, message.content);
+    }
+
+  } catch (error) {
+    console.error("History loading error:", error);
   }
 }
 
