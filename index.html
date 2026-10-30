@@ -153,6 +153,49 @@ header {
   background: var(--panel2);
   color: white;
 }
+
+.history-row {
+  position: relative;
+}
+
+.history-dropdown {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  z-index: 100;
+  width: 190px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+
+.history-dropdown[hidden] {
+  display: none;
+}
+
+.history-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.history-dropdown-item:hover {
+  background: var(--panel2);
+}
+
+.history-dropdown-item.delete-option {
+  color: #ff7777;
+}
+
 .sidebar-note {
   margin-top:28px;
   padding:13px;
@@ -958,6 +1001,7 @@ function saveConversation() {
   renderHistory();
 }
 
+
 function renderHistory() {
   const desktop = $("history");
   const mobile = $("mobileHistory");
@@ -984,24 +1028,44 @@ function renderHistory() {
     menuBtn.title = "Mga opsyon";
     menuBtn.setAttribute("aria-label", "Mga opsyon sa usapan");
 
+    const menu = document.createElement("div");
+    menu.className = "history-dropdown";
+    menu.hidden = true;
+
+    const renameBtn = document.createElement("button");
+    renameBtn.className = "history-dropdown-item";
+    renameBtn.textContent = "✏️ Palitan ang pamagat";
+    renameBtn.onclick = (event) => {
+      event.stopPropagation();
+      menu.hidden = true;
+      renameConversation(c.id);
+    };
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className =
+      "history-dropdown-item delete-option";
+    deleteBtn.textContent = "🗑️ Burahin ang usapan";
+    deleteBtn.onclick = (event) => {
+      event.stopPropagation();
+      menu.hidden = true;
+      deleteConversation(c.id);
+    };
+
+    menu.append(renameBtn, deleteBtn);
+
     menuBtn.onclick = (event) => {
       event.stopPropagation();
 
-      const choice = prompt(
-        "Mga opsyon para sa usapan:\n\n" +
-        "1 - Palitan ang pamagat\n" +
-        "2 - Burahin ang usapan\n\n" +
-        "Ilagay ang numero:"
-      );
+      document.querySelectorAll(".history-dropdown").forEach(otherMenu => {
+        if (otherMenu !== menu) {
+          otherMenu.hidden = true;
+        }
+      });
 
-      if (choice === "1") {
-        renameConversation(c.id);
-      } else if (choice === "2") {
-        deleteConversation(c.id);
-      }
+      menu.hidden = !menu.hidden;
     };
 
-    wrapper.append(titleBtn, menuBtn);
+    wrapper.append(titleBtn, menuBtn, menu);
 
     return wrapper;
   }
@@ -1011,6 +1075,14 @@ function renderHistory() {
     mobile.appendChild(createHistoryItem(c));
   });
 }
+
+// Isara ang mga menu kapag nag-click sa labas.
+document.addEventListener("click", () => {
+  document.querySelectorAll(".history-dropdown").forEach(menu => {
+    menu.hidden = true;
+  });
+});
+
 
   async function renameConversation(id) {
   const c = conversations.find(item => item.id === id);
