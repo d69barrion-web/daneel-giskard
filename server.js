@@ -597,6 +597,12 @@ app.get("/conversations/:conversationId/messages", requireAuth, async (req, res)
     const uid = req.user.uid;
     const conversationId = req.params.conversationId;
 
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(conversationId)) {
+  return res.status(400).json({
+    error: "Hindi valid ang conversation ID."
+  });
+}
+
     const conversationRef = admin
       .firestore()
       .collection("users")
