@@ -1025,6 +1025,8 @@ async function createNewConversation() {
   }
 }
 
+  $("mobileNewConversation").onclick = createNewConversation;
+  
 async function saveDaneelPreferredName(name) {
   if (!currentUser) {
     alert("Mag-sign in muna sa Google.");
