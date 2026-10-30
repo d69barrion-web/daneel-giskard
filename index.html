@@ -891,26 +891,21 @@ function makeId() {
 function loadState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
+
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed.conversations)) {
-        if (!parsed.conversations.length) {
-          parsed.conversations.push(newConversation());
-        }
-        if (!parsed.conversations.some(c => c.id === parsed.activeId)) {
-          parsed.activeId = parsed.conversations[0].id;
-        }
-        return parsed;
-      }
+
+      return {
+        notes: typeof parsed.notes === "string"
+          ? parsed.notes
+          : ""
+      };
     }
   } catch (e) {
-    console.warn("Hindi mabasa ang lokal na diary.", e);
+    console.warn("Hindi mabasa ang lokal na notes.", e);
   }
 
-  const first = newConversation();
   return {
-    conversations: [first],
-    activeId: first.id,
     notes: ""
   };
 }
