@@ -562,7 +562,7 @@ header {
 }
 
 .daneel-dialog-actions button.primary {
-  background: var(--accent);
+  background: var(--blue);
   color: white;
 }
 </style>
@@ -713,7 +713,28 @@ header {
     </section>
   </div>
 </section>
+  <div class="daneel-modal" id="renameModal" hidden>
+  <div class="daneel-dialog">
+    <h3>Palitan ang pamagat</h3>
 
+    <input
+      type="text"
+      id="renameTitleInput"
+      maxlength="60"
+      placeholder="Bagong pamagat..."
+    >
+
+    <div class="daneel-dialog-actions">
+      <button type="button" id="cancelRenameBtn">
+        Kanselahin
+      </button>
+
+      <button type="button" class="primary" id="saveRenameBtn">
+        I-save
+      </button>
+    </div>
+  </div>
+</div>
 <script>
 const API_URL = "https://daneel-giskard.onrender.com/chat";
 
@@ -1660,27 +1681,5 @@ renderHistory();
 renderChat();
 updateMemoryView();
 </script>
-  <div class="daneel-modal" id="renameModal" hidden>
-  <div class="daneel-dialog">
-    <h3>Palitan ang pamagat</h3>
-
-    <input
-      type="text"
-      id="renameTitleInput"
-      maxlength="60"
-      placeholder="Bagong pamagat..."
-    >
-
-    <div class="daneel-dialog-actions">
-      <button type="button" id="cancelRenameBtn">
-        Kanselahin
-      </button>
-
-      <button type="button" class="primary" id="saveRenameBtn">
-        I-save
-      </button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
