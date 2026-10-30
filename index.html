@@ -680,14 +680,14 @@ async function loadDaneelProfile() {
   }
 }
 
-async function loadConversationHistory() {
+async function loadConversationMessages(conversationId) {
   if (!currentUser) return;
 
   try {
     const idToken = await currentUser.getIdToken();
 
     const response = await fetch(
-      "https://daneel-giskard.onrender.com/history",
+      `${API_URL.replace("/chat", "")}/conversations/${conversationId}/messages`,
       {
         method: "GET",
         headers: {
@@ -697,21 +697,82 @@ async function loadConversationHistory() {
     );
 
     if (!response.ok) {
-      throw new Error("Hindi makuha ang conversation history.");
+      throw new Error("Hindi makuha ang mga mensahe.");
     }
 
     const data = await response.json();
 
-    // Linisin muna ang kasalukuyang conversation display.
-    chat.innerHTML = "";
+    const c = conversations.find(item => item.id === conversationId);
+    if (!c) return;
 
-    // Ibalik ang mga mensahe mula sa Firestore.
-    for (const message of data.messages) {
-      addMessageElement(message.role, message.content);
-    }
+    c.messages = (data.messages || []).map(message => ({
+      role: message.role === "assistant" ? "bot" : "user",
+      text: message.content
+    }));
 
   } catch (error) {
-    console.error("History loading error:", error);
+    console.error("Messages loading error:", error);
+    status.textContent = "● Hindi makuha ang mga mensahe";
+  }
+}
+
+async function loadConversationHistory() {
+  if (!currentUser) return;
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(
+      `${API_URL.replace("/chat", "")}/conversations`,
+      {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Hindi makuha ang listahan ng usapan.");
+    }
+
+    const data = await response.json();
+    conversations = data.conversations || [];
+
+    // Gumawa ng unang conversation kung wala pa.
+    if (conversations.length === 0) {
+      const createResponse = await fetch(
+        `${API_URL.replace("/chat", "")}/conversations`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${idToken}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({})
+        }
+      );
+
+      if (!createResponse.ok) {
+        throw new Error("Hindi makagawa ng bagong usapan.");
+      }
+
+      const created = await createResponse.json();
+      conversations.push({
+        ...created.conversation,
+        messages: []
+      });
+    }
+
+    activeConversationId = conversations[0].id;
+
+    renderHistory();
+    await loadConversationMessages(activeConversationId);
+    renderChat();
+
+  } catch (error) {
+    console.error("Conversation loading error:", error);
+    status.textContent = "● Hindi ma-load ang mga usapan";
   }
 }
 
@@ -817,6 +878,10 @@ const status = $("status");
 let busy = false;
 let state = loadState();
 
+// Firestore na ang magiging source ng conversations.
+let conversations = [];
+let activeConversationId = null;
+
 function makeId() {
   return Date.now().toString(36) +
     Math.random().toString(36).slice(2, 8);
@@ -860,59 +925,69 @@ function loadState() {
 
 function persist() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      notes: state.notes || ""
+    }));
     return true;
   } catch (e) {
-    console.error("Hindi ma-save ang diary.", e);
-    status.textContent = "● Hindi na-save — mag-backup";
+    console.error("Hindi ma-save ang notes.", e);
+    status.textContent = "● Hindi na-save ang notes";
     return false;
   }
 }
-
+  
 function activeConversation() {
-  return state.conversations.find(c => c.id === state.activeId);
+  return conversations.find(
+    c => c.id === activeConversationId
+  );
 }
 
 function saveConversation() {
-  const c = activeConversation();
-  if (!c) return;
-
-  const firstUser = c.messages.find(m => m.role === "user");
-  if (firstUser) {
-    c.title = firstUser.text.slice(0, 34) +
-      (firstUser.text.length > 34 ? "…" : "");
-  }
-  persist();
   renderHistory();
 }
 
 function renderHistory() {
   const desktop = $("history");
   const mobile = $("mobileHistory");
+
   desktop.replaceChildren();
   mobile.replaceChildren();
 
-  [...state.conversations].reverse().forEach(c => {
+  [...conversations].forEach(c => {
     const a = document.createElement("button");
+
     a.className = "history-item" +
-      (c.id === state.activeId ? " active" : "");
+      (c.id === activeConversationId ? " active" : "");
+
     a.textContent = c.title;
     a.title = c.title;
     a.onclick = () => switchConversation(c.id);
+
     desktop.appendChild(a);
 
     const b = document.createElement("button");
-    b.className = c.id === state.activeId ? "active" : "";
+
+    b.className =
+      c.id === activeConversationId ? "active" : "";
+
     b.textContent = c.title;
     b.onclick = () => switchConversation(c.id);
+
     mobile.appendChild(b);
   });
 }
 
-function switchConversation(id) {
-  state.activeId = id;
-  persist();
+async function switchConversation(id) {
+  if (busy || id === activeConversationId) return;
+
+  activeConversationId = id;
   renderHistory();
+
+  const c = conversations.find(item => item.id === id);
+  if (c) c.messages = [];
+
+  await loadConversationMessages(id);
+
   renderChat();
   showView("chatView");
 }
@@ -1106,16 +1181,51 @@ function resizeInput() {
   input.style.height = Math.min(input.scrollHeight, 130) + "px";
 }
 
-$("newChatBtn").addEventListener("click", () => {
-  if (busy) return;
-  const c = newConversation();
-  state.conversations.push(c);
-  state.activeId = c.id;
-  persist();
-  renderHistory();
-  renderChat();
-  showView("chatView");
-  input.focus();
+$("newChatBtn").addEventListener("click", async () => {
+  if (busy || !currentUser) return;
+
+  try {
+    status.textContent = "● Gumagawa ng bagong usapan...";
+
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(
+      `${API_URL.replace("/chat", "")}/conversations`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${idToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({})
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Hindi makagawa ng bagong usapan.");
+    }
+
+    const data = await response.json();
+
+    const c = {
+      ...data.conversation,
+      messages: []
+    };
+
+    conversations.unshift(c);
+    activeConversationId = c.id;
+
+    renderHistory();
+    renderChat();
+    showView("chatView");
+    input.focus();
+
+    status.textContent = "● Bagong usapan";
+
+  } catch (error) {
+    console.error("New conversation error:", error);
+    status.textContent = "● Hindi nakagawa ng bagong usapan";
+  }
 });
 
 document.querySelectorAll(".tab").forEach(tab => {
