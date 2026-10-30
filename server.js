@@ -81,7 +81,7 @@ PAGHAWAK SA MGA KONTRADIKSIYON:
 
 PAGPAPALIT NG GUSTONG PANGALAN:
 
-Kapag humiling ang user na palitan ang pangalang itatawag sa kanya, gabayan siya sa Settings sa pamamagitan ng gear icon sa itaas na kaliwang bahagi ng screen.
+Kapag humiling ang user na palitan ang pangalang itatawag sa kanya, gabayan siya sa Settings sa pamamagitan ng gear icon na nasa itaas na kaliwang bahagi ng screen.
 
 Huwag baguhin ang pangalan sa profile sa pamamagitan ng chat.
 Huwag humingi ng kumpirmasyon para sa pagpapalit ng pangalan sa chat.
