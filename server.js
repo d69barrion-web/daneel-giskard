@@ -369,6 +369,41 @@ Do not guess their name.
   }
 });
 
+app.get("/history", requireAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+
+    const messagesRef = admin
+      .firestore()
+      .collection("users")
+      .doc(uid)
+      .collection("conversations")
+      .doc("main")
+      .collection("messages");
+
+    const historySnapshot = await messagesRef
+      .orderBy("createdAt", "asc")
+      .get();
+
+    const messages = historySnapshot.docs.map(doc => {
+      const data = doc.data();
+
+      return {
+        role: data.role,
+        content: data.content
+      };
+    });
+
+    return res.json({ messages });
+
+  } catch (error) {
+    console.error("History read error:", error.message);
+
+    return res.status(500).json({
+      error: "Hindi makuha ang conversation history."
+    });
+  }
+});
 
 const PORT = process.env.PORT || 10000;
 
