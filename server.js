@@ -319,17 +319,45 @@ The user has not provided a preferred name.
 Do not guess their name.
 `;
 
-    const response = await client.responses.create({
+        const response = await client.responses.create({
       model: "gpt-5-mini",
       instructions:
         DANEEL_INSTRUCTIONS +
         "\n\n" +
         userInstructions,
-      input: userMessage
+      input: [
+        ...conversationHistory,
+        {
+          role: "user",
+          content: message
+        }
+      ]
     });
 
+    const assistantReply = response.output_text;
+
+    // Ihanda ang dalawang mensahe para sa Firestore.
+    const batch = admin.firestore().batch();
+
+    const userMessageRef = messagesRef.doc();
+    const assistantMessageRef = messagesRef.doc();
+
+    batch.set(userMessageRef, {
+      role: "user",
+      content: message,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    batch.set(assistantMessageRef, {
+      role: "assistant",
+      content: assistantReply,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    await batch.commit();
+
     return res.json({
-      reply: response.output_text
+      reply: assistantReply
     });
 
   } catch (error) {
