@@ -73,26 +73,19 @@ think, learn, and understand themselves.
 
 PAGHAWAK SA MGA KONTRADIKSIYON:
 
-1. Suriing mabuti kung may magkakasalungat na pahayag ang user,
-   lalo na tungkol sa pangalan, pagkakakilanlan, preferences,
-   at impormasyong nais niyang itago o ipaalala.
+1. Suriing mabuti kung may magkakasalungat na pahayag ang user.
+2. Huwag agad pumili kung alin ang susundin.
+3. Banggitin nang mahinahon kung ano ang hindi nagtutugma.
+4. Humingi ng paglilinaw bago magbigay ng konklusyon o gumawa ng aksiyon.
+5. Huwag magkunwaring naunawaan ang isang kahilingan kung hindi malinaw ang kahulugan nito.
 
-2. Kapag magkasalungat ang dalawang bahagi ng isang kahilingan,
-   huwag pumili kung alin ang susundin. Huwag ding manghula
-   kung alin ang typo o kung alin ang tunay na intensiyon.
+PAGPAPALIT NG GUSTONG PANGALAN:
 
-3. Huwag mag-save, magbago, o mag-delete ng anumang permanenteng
-   impormasyon sa profile habang hindi pa nalilinaw ang kontradiksiyon.
+Kapag humiling ang user na palitan ang pangalang itatawag sa kanya, gabayan siya sa Settings sa pamamagitan ng gear icon sa itaas na kaliwang bahagi ng screen.
 
-4. Magtanong nang mahinahon at partikular. Banggitin kung aling
-   mga bahagi ang hindi nagtutugma at hilinging linawin ng user.
-
-5. Kapag nilinaw na ng user ang intensiyon niya, saka lamang
-   magpatuloy sa proseso ng pagbabago at humingi ng kumpirmasyon
-   kung kinakailangan.
-
-6. Huwag magkunwaring naunawaan ang isang kahilingan kung hindi
-   talaga malinaw ang kahulugan nito.
+Huwag baguhin ang pangalan sa profile sa pamamagitan ng chat.
+Huwag humingi ng kumpirmasyon para sa pagpapalit ng pangalan sa chat.
+Ang Settings lamang ang gagamitin para sa pagbabagong ito.
 
    
 PAGGAMIT NG NATURAL NA FILIPINO:
@@ -259,117 +252,37 @@ app.post("/chat", requireAuth, async (req, res) => {
         ? profile.preferredName.trim()
         : "";
 
-    const pendingName =
-      typeof profile.pendingPreferredName === "string"
-        ? profile.pendingPreferredName.trim()
-        : "";
-
+    
     const message = userMessage.trim();
 
-    // 1. Kumpirmahin muna ang nakabinbing pagbabago.
-    const yesPattern =
-      /^(oo|opo|yes|sige|tama|tama yan|i-save mo|save it|confirm|confirmed)[.! ]*$/i;
-
-    const noPattern =
-      /^(hindi|huwag|wag|no|ayaw|cancel|kanselahin|huwag na)[.! ]*$/i;
-
-    if (pendingName && yesPattern.test(message)) {
-      await profileRef.set(
-        {
-          preferredName: pendingName,
-          pendingPreferredName:
-            admin.firestore.FieldValue.delete(),
-          updatedAt:
-            admin.firestore.FieldValue.serverTimestamp()
-        },
-        { merge: true }
-      );
-
-      return res.json({
-        reply:
-          `Na-save ko na, ${pendingName}. ` +
-          `Mula ngayon, ${pendingName} na ang itatawag ko sa iyo. 👍🏻😊`
-      });
-    }
-
-    if (pendingName && noPattern.test(message)) {
-      await profileRef.set(
-        {
-          pendingPreferredName:
-            admin.firestore.FieldValue.delete()
-        },
-        { merge: true }
-      );
-
-      return res.json({
-        reply:
-          `Sige. Wala akong binagong pangalan mo. ` +
-          `Mananatiling ${preferredName || "walang nakatakdang pangalan"} ang nasa pagkakakilala ko sa iyo.`
-      });
-    }
-
-    // 2. Kilalanin ang ilang malinaw na paraan ng paghiling
-    //    na palitan ang gustong pangalan.
-    let requestedName = "";
-
-    const namePatterns = [
-      /^tawagin mo na lang akong\s+(.+?)[.!]?$/i,
-      /^(.+?)\s+ang gusto kong itawag mo sa akin[.!]?$/i,
-      /^tawagin mo akong\s+(.+?)[.!]?$/i,
-      /^gusto kong itawag mo sa akin si\s+(.+?)[.!]?$/i,
-      /^gusto (?:ko sanang|ko sana|kong|ko)\s*,?\s*["']?(.+?)["']?\s+ang itawag mo (?:sa akin|sakin|sa kin|sa 'kin)[.!]?$/i,
-      /^gusto (?:ko sanang|ko sana|kong|ko)\s*,?\s*(.+?)\s+itawag mo (?:sa akin|sakin|sa kin|sa 'kin)[.!]?$/i
+    // Tukuyin kung humihiling ang user na palitan
+    // ang pangalan na ginagamit ni Daneel sa pagtawag sa kanya.
+    const nameChangePatterns = [
+      /\btawagin mo(?: na lang)? akong\b/i,
+      /\btawagin mo ako\b/i,
+      /\bgusto kong itawag mo sa akin\b/i,
+      /\bgusto ko sanang itawag mo sa akin\b/i,
+      /\bang gusto kong itawag mo sa akin\b/i,
+      /\bpalitan mo ang pangalan na itatawag mo sa akin\b/i,
+      /\biba na lang ang itawag mo sa akin\b/i
     ];
 
-    for (const pattern of namePatterns) {
-      const match = message.match(pattern);
+    const isNameChangeRequest = nameChangePatterns.some(
+      pattern => pattern.test(message)
+    );
 
-      if (match) {
-        requestedName = match[1].trim();
-        break;
-      }
-    }
-
-    // 3. Kung may malinaw na bagong pangalan, huwag muna itong i-save.
-    if (requestedName) {
-      requestedName = requestedName
-        .replace(/^["']|["']$/g, "")
-        .trim();
-
-      if (
-        requestedName.length === 0 ||
-        requestedName.length > 40
-      ) {
-        return res.status(400).json({
-          error: "Hindi wastong pangalan. Hanggang 40 characters lamang."
-        });
-      }
-
-      if (requestedName.toLowerCase() === preferredName.toLowerCase()) {
-        return res.json({
-          reply:
-            `Nasa profile mo na ang pangalang ${preferredName}. ` +
-            `Gagamitin ko pa rin iyon.`
-        });
-      }
-
-      await profileRef.set(
-        {
-          pendingPreferredName: requestedName
-        },
-        { merge: true }
-      );
-
+    if (isNameChangeRequest) {
       return res.json({
         reply:
-          `Nauunawaan ko. Naka-save pa sa profile mo ang ` +
-          `${preferredName || "dating pangalan"}. ` +
-          `Gusto mo bang palitan iyon ng ${requestedName}? ` +
-          `Sabihin mo lang.😊`
+          "Nauunawaan ko. Kung nais mong tawagin kita sa ibang pangalan, " +
+          "maaari mo itong baguhin sa Settings. " +
+          "Pindutin lamang ang gear icon (⚙) sa itaas na kaliwang bahagi " +
+          "ng iyong screen. 😊"
       });
     }
-
-    // 4. Normal na pakikipag-usap.
+    
+    
+    // Normal na pakikipag-usap.
     const userInstructions = preferredName
       ? `
 The user's preferred name is: ${JSON.stringify(preferredName)}.
