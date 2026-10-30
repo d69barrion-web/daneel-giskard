@@ -340,19 +340,23 @@ Do not guess their name.
     const batch = admin.firestore().batch();
 
     const userMessageRef = messagesRef.doc();
-    const assistantMessageRef = messagesRef.doc();
+const assistantMessageRef = messagesRef.doc();
 
-    batch.set(userMessageRef, {
-      role: "user",
-      content: message,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+const messageTime = Date.now();
 
-    batch.set(assistantMessageRef, {
-      role: "assistant",
-      content: assistantReply,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+batch.set(userMessageRef, {
+  role: "user",
+  content: message,
+  createdAtMs: messageTime,
+  createdAt: admin.firestore.FieldValue.serverTimestamp()
+});
+
+batch.set(assistantMessageRef, {
+  role: "assistant",
+  content: assistantReply,
+  createdAtMs: messageTime + 1,
+  createdAt: admin.firestore.FieldValue.serverTimestamp()
+});
 
     await batch.commit();
 
@@ -381,24 +385,18 @@ app.get("/history", requireAuth, async (req, res) => {
       .doc("main")
       .collection("messages");
 
-    const historySnapshot = await messagesRef
-  .orderBy("createdAt", "asc")
+ const historySnapshot = await messagesRef
+  .orderBy("createdAtMs", "asc")
   .get();
 
-const sortedMessages = historySnapshot.docs.sort((a, b) => {
-  const timeA = a.data().createdAt?.toMillis() || 0;
-  const timeB = b.data().createdAt?.toMillis() || 0;
-  return timeA - timeB;
+const messages = historySnapshot.docs.map(doc => {
+  const data = doc.data();
+
+  return {
+    role: data.role,
+    content: data.content
+  };
 });
-
-    const messages = sortedMessages.map(doc => {
-      const data = doc.data();
-
-      return {
-        role: data.role,
-        content: data.content
-      };
-    });
 
     return res.json({ messages });
 
