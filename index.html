@@ -1089,25 +1089,47 @@ function renderHistory() {
     menuBtn.className = "history-menu-btn";
     menuBtn.textContent = "⋮";
     menuBtn.title = "Mga opsyon";
+    menuBtn.setAttribute("aria-label", "Mga opsyon sa usapan");
+
+    const menu = document.createElement("div");
+    menu.className = "history-dropdown";
+    menu.hidden = true;
+
+    const renameBtn = document.createElement("button");
+    renameBtn.className = "history-dropdown-item";
+    renameBtn.textContent = "✏️ Palitan ang pamagat";
+
+    renameBtn.onclick = (event) => {
+      event.stopPropagation();
+      menu.hidden = true;
+      renameConversation(c.id);
+    };
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className =
+      "history-dropdown-item delete-option";
+    deleteBtn.textContent = "🗑️ Burahin ang usapan";
+
+    deleteBtn.onclick = (event) => {
+      event.stopPropagation();
+      menu.hidden = true;
+      deleteConversation(c.id);
+    };
+
+    menu.append(renameBtn, deleteBtn);
 
     menuBtn.onclick = (event) => {
       event.stopPropagation();
 
-      const choice = prompt(
-        "Mga opsyon para sa usapan:\n\n" +
-        "1 - Palitan ang pamagat\n" +
-        "2 - Burahin ang usapan\n\n" +
-        "Ilagay ang numero:"
-      );
+      document.querySelectorAll(".history-dropdown").forEach(item => {
+        if (item !== menu) item.hidden = true;
+      });
 
-      if (choice === "1") {
-        renameConversation(c.id);
-      } else if (choice === "2") {
-        deleteConversation(c.id);
-      }
+      menu.hidden = !menu.hidden;
     };
 
-    wrapper.append(titleBtn, menuBtn);
+    wrapper.append(titleBtn, menuBtn, menu);
+
     return wrapper;
   }
 
@@ -1116,7 +1138,11 @@ function renderHistory() {
     mobile.appendChild(createHistoryItem(c));
   });
 }
-
+document.addEventListener("click", () => {
+  document.querySelectorAll(".history-dropdown").forEach(menu => {
+    menu.hidden = true;
+  });
+});
 
   let renameTargetId = null;
 
