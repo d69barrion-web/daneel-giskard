@@ -186,6 +186,31 @@ app.patch("/profile", requireAuth, async (req, res) => {
     }
 
     const uid = req.user.uid;
+const conversationId = req.body?.conversationId;
+
+if (
+  typeof conversationId !== "string" ||
+  !/^[A-Za-z0-9_-]{1,128}$/.test(conversationId)
+) {
+  return res.status(400).json({
+    error: "Walang valid na conversation ID."
+  });
+}
+
+const conversationRef = admin
+  .firestore()
+  .collection("users")
+  .doc(uid)
+  .collection("conversations")
+  .doc(conversationId);
+
+const conversationDoc = await conversationRef.get();
+
+if (!conversationDoc.exists) {
+  return res.status(404).json({
+    error: "Hindi makita ang conversation."
+  });
+}
 
     const profileRef = admin
       .firestore()
@@ -256,18 +281,12 @@ app.post("/chat", requireAuth, async (req, res) => {
     const message = userMessage.trim();
 
         // Kunin ang huling 20 mensahe ng user mula sa Firestore.
-    const messagesRef = admin
-      .firestore()
-      .collection("users")
-      .doc(uid)
-      .collection("conversations")
-      .doc("main")
-      .collection("messages");
+    const messagesRef = conversationRef.collection("messages");
 
     const historySnapshot = await messagesRef
-      .orderBy("createdAt", "desc")
-      .limit(20)
-      .get();
+  .orderBy("createdAtMs", "desc")
+  .limit(20)
+  .get();
 
     const conversationHistory = historySnapshot.docs
       .reverse()
@@ -358,7 +377,22 @@ batch.set(assistantMessageRef, {
   createdAt: admin.firestore.FieldValue.serverTimestamp()
 });
 
-    await batch.commit();
+    const existingConversation = conversationDoc.data();
+
+const conversationTitle =
+  existingConversation.title === "Bagong usapan"
+    ? message.slice(0, 50)
+    : existingConversation.title;
+
+const now = Date.now();
+
+batch.set(conversationRef, {
+  title: conversationTitle,
+  updatedAtMs: now,
+  updatedAt: admin.firestore.FieldValue.serverTimestamp()
+}, { merge: true });
+
+await batch.commit();
 
     return res.json({
       reply: assistantReply
