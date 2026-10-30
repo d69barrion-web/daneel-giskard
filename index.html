@@ -979,6 +979,52 @@ async function loadConversationHistory() {
   }
 }
 
+  
+async function createNewConversation() {
+  if (!currentUser) return;
+
+  try {
+    status.textContent = "● Gumagawa ng bagong usapan...";
+
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(
+      `${API_URL.replace("/chat", "")}/conversations`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${idToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({})
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Hindi makagawa ng bagong usapan.");
+    }
+
+    const data = await response.json();
+
+    const created = {
+      ...data.conversation,
+      messages: []
+    };
+
+    conversations.unshift(created);
+    activeConversationId = created.id;
+
+    renderHistory();
+    renderChat();
+    showView("chatView");
+
+    status.textContent = "● Bagong usapan";
+  } catch (error) {
+    console.error("New conversation error:", error);
+    status.textContent = "● Hindi makagawa ng bagong usapan";
+  }
+}
+
 async function saveDaneelPreferredName(name) {
   if (!currentUser) {
     alert("Mag-sign in muna sa Google.");
