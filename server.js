@@ -382,10 +382,16 @@ app.get("/history", requireAuth, async (req, res) => {
       .collection("messages");
 
     const historySnapshot = await messagesRef
-      .orderBy("createdAt", "asc")
-      .get();
+  .orderBy("createdAt", "asc")
+  .get();
 
-    const messages = historySnapshot.docs.map(doc => {
+const sortedMessages = historySnapshot.docs.sort((a, b) => {
+  const timeA = a.data().createdAt?.toMillis() || 0;
+  const timeB = b.data().createdAt?.toMillis() || 0;
+  return timeA - timeB;
+});
+
+    const messages = sortedMessages.map(doc => {
       const data = doc.data();
 
       return {
