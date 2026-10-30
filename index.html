@@ -887,14 +887,6 @@ function makeId() {
     Math.random().toString(36).slice(2, 8);
 }
 
-function newConversation() {
-  return {
-    id: makeId(),
-    title: "Bagong usapan",
-    createdAt: new Date().toISOString(),
-    messages: []
-  };
-}
 
 function loadState() {
   try {
@@ -1003,15 +995,17 @@ function showView(viewId) {
 }
 
 function updateMemoryView() {
-  const count = state.conversations.reduce(
-    (sum, c) => sum + c.messages.length, 0
+  const count = conversations.reduce(
+    (sum, c) => sum + (c.messages || []).length,
+    0
   );
+
   $("conversationCount").textContent =
-    state.conversations.length + " usapan at " + count +
-    " mensahe ang nasa lokal na diary na ito.";
+    conversations.length + " usapan at " + count +
+    " mensahe ang kasalukuyang nasa memorya ng app.";
+
   $("notes").value = state.notes || "";
 }
-
 function addMessageElement(role, text) {
   const wrapper = document.createElement("div");
   wrapper.className = "message " + role;
@@ -1086,8 +1080,18 @@ async function sendMessage() {
   const text = input.value.trim();
   if (!text || busy) return;
 
-  let c = activeConversation();
+  if (!currentUser) {
+    status.textContent = "● Mag-sign in muna sa Google";
+    return;
+  }
+
+  const conversationId = activeConversationId;
+  const c = conversations.find(item => item.id === conversationId);
+
   if (!c) return;
+
+  busy = true;
+  sendBtn.disabled = true;
 
   c.messages.push({
     role: "user",
@@ -1097,77 +1101,90 @@ async function sendMessage() {
 
   input.value = "";
   resizeInput();
-  saveConversation();
+  renderHistory();
   renderChat();
 
-  busy = true;
-  sendBtn.disabled = true;
   status.textContent = "● Nag-iisip si Daneel...";
 
-  const loading = addMessageElement("bot", "Sandali lang, Daniel…");
+  const loading = addMessageElement("bot", "Sandali lang…");
   chat.scrollTop = chat.scrollHeight;
 
   try {
-    
-if (!currentUser) {
-  throw new Error("Hindi pa naka-sign in sa Google.");
-}
+    const idToken = await currentUser.getIdToken();
 
-const idToken = await currentUser.getIdToken();
-
-const response = await fetch(API_URL, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${idToken}`
-  },
-  body: JSON.stringify({ message: text })
-});
-
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify({
+        message: text,
+        conversationId: conversationId
+      })
+    });
 
     const data = await response.json();
 
     if (!response.ok) {
-  const details = data.error || response.statusText || "Hindi alam ang dahilan";
-  throw new Error("Server response " + response.status + ": " + details);
+      const details =
+        data.error || response.statusText || "Hindi alam ang dahilan";
+      throw new Error(
+        "Server response " + response.status + ": " + details
+      );
     }
+
     if (typeof data.reply !== "string") {
       throw new Error("Walang valid na reply sa server response.");
     }
 
     loading.querySelector(".bubble").textContent = data.reply;
 
-    c = activeConversation();
     c.messages.push({
       role: "bot",
       text: data.reply,
       timestamp: new Date().toISOString()
     });
 
-    saveConversation();
+    // Kunin muli ang listahan para ma-update ang title at order.
+    const refreshToken = await currentUser.getIdToken();
+
+    const listResponse = await fetch(
+      `${API_URL.replace("/chat", "")}/conversations`,
+      {
+        headers: {
+          "Authorization": `Bearer ${refreshToken}`
+        }
+      }
+    );
+
+    if (listResponse.ok) {
+      const listData = await listResponse.json();
+
+      conversations = (listData.conversations || []).map(item => {
+        const existing = conversations.find(old => old.id === item.id);
+        return {
+          ...item,
+          messages: existing ? existing.messages : []
+        };
+      });
+    }
+
+    renderHistory();
     status.textContent = "● Handa nang makinig";
 
   } catch (error) {
     console.error(error);
 
     const errorText =
-  "Hindi ko makuha ang sagot mula sa AI server.\n" +
-  "Detalye: " + error.message +
-  "\nNapanatili ang iyong mensahe sa lokal na diary.";
+      "Hindi ko makuha ang sagot mula sa AI server.\n" +
+      "Detalye: " + error.message;
 
     loading.querySelector(".bubble").textContent = errorText;
 
-    // Itala rin ang error bilang tugon para makita sa history.
-    c = activeConversation();
-    c.messages.push({
-      role: "bot",
-      text: errorText,
-      timestamp: new Date().toISOString(),
-      error: true
-    });
-
-    saveConversation();
+    // Hindi ise-save sa Firestore ang error message.
     status.textContent = "● May problema sa koneksyon";
+
   } finally {
     busy = false;
     sendBtn.disabled = false;
