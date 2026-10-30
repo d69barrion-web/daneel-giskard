@@ -373,6 +373,86 @@ batch.set(assistantMessageRef, {
   }
 });
 
+
+/* =========================================
+   DANEEL MULTIPLE CONVERSATIONS
+========================================= */
+
+// Kunin ang lahat ng conversations ng naka-sign-in na user.
+app.get("/conversations", requireAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+
+    const conversationsRef = admin
+      .firestore()
+      .collection("users")
+      .doc(uid)
+      .collection("conversations");
+
+    const snapshot = await conversationsRef
+      .orderBy("updatedAtMs", "desc")
+      .get();
+
+    const conversations = snapshot.docs.map(doc => ({
+      id: doc.id,
+      title: doc.data().title || "Bagong usapan",
+      createdAtMs: doc.data().createdAtMs || 0,
+      updatedAtMs: doc.data().updatedAtMs || 0
+    }));
+
+    return res.json({ conversations });
+
+  } catch (error) {
+    console.error("Conversations read error:", error.message);
+
+    return res.status(500).json({
+      error: "Hindi makuha ang listahan ng conversations."
+    });
+  }
+});
+
+
+// Gumawa ng bagong conversation.
+app.post("/conversations", requireAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const now = Date.now();
+
+    const conversationsRef = admin
+      .firestore()
+      .collection("users")
+      .doc(uid)
+      .collection("conversations");
+
+    const conversationRef = conversationsRef.doc();
+
+    await conversationRef.set({
+      title: "Bagong usapan",
+      createdAtMs: now,
+      updatedAtMs: now,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    return res.status(201).json({
+      success: true,
+      conversation: {
+        id: conversationRef.id,
+        title: "Bagong usapan",
+        createdAtMs: now,
+        updatedAtMs: now
+      }
+    });
+
+  } catch (error) {
+    console.error("Conversation creation error:", error.message);
+
+    return res.status(500).json({
+      error: "Hindi makagawa ng bagong conversation."
+    });
+  }
+});
+
 app.get("/history", requireAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
