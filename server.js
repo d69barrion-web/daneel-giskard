@@ -489,6 +489,108 @@ app.post("/conversations", requireAuth, async (req, res) => {
 });
 
 
+// Palitan ang title ng isang conversation.
+app.patch("/conversations/:conversationId", requireAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const conversationId = req.params.conversationId;
+    const title = req.body?.title;
+
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(conversationId)) {
+      return res.status(400).json({
+        error: "Hindi valid ang conversation ID."
+      });
+    }
+
+    if (typeof title !== "string") {
+      return res.status(400).json({
+        error: "Kailangan ng valid na title."
+      });
+    }
+
+    const cleanTitle = title.trim();
+
+    if (!cleanTitle || cleanTitle.length > 60) {
+      return res.status(400).json({
+        error: "Ang title ay dapat 1 hanggang 60 characters."
+      });
+    }
+
+    const conversationRef = admin.firestore()
+      .collection("users")
+      .doc(uid)
+      .collection("conversations")
+      .doc(conversationId);
+
+    const conversationDoc = await conversationRef.get();
+
+    if (!conversationDoc.exists) {
+      return res.status(404).json({
+        error: "Hindi makita ang conversation."
+      });
+    }
+
+    await conversationRef.update({
+      title: cleanTitle,
+      updatedAtMs: Date.now(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    return res.json({
+      success: true,
+      title: cleanTitle
+    });
+
+  } catch (error) {
+    console.error("Rename conversation error:", error);
+    return res.status(500).json({
+      error: "Hindi mapalitan ang title."
+    });
+  }
+});
+
+
+// Burahin ang conversation kasama ang lahat ng messages.
+app.delete("/conversations/:conversationId", requireAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const conversationId = req.params.conversationId;
+
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(conversationId)) {
+      return res.status(400).json({
+        error: "Hindi valid ang conversation ID."
+      });
+    }
+
+    const conversationRef = admin.firestore()
+      .collection("users")
+      .doc(uid)
+      .collection("conversations")
+      .doc(conversationId);
+
+    const conversationDoc = await conversationRef.get();
+
+    if (!conversationDoc.exists) {
+      return res.status(404).json({
+        error: "Hindi makita ang conversation."
+      });
+    }
+
+    await admin.firestore().recursiveDelete(conversationRef);
+
+    return res.json({
+      success: true,
+      deletedConversationId: conversationId
+    });
+
+  } catch (error) {
+    console.error("Delete conversation error:", error);
+    return res.status(500).json({
+      error: "Hindi mabura ang conversation."
+    });
+  }
+});
+
 // Kunin ang mga mensahe ng isang partikular na conversation.
 app.get("/conversations/:conversationId/messages", requireAuth, async (req, res) => {
   try {
