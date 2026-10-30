@@ -1242,7 +1242,7 @@ function renderHistory() {
   const mobile = $("mobileHistory");
 
   desktop.replaceChildren();
-  mobile.replaceChildren();
+mobile.querySelectorAll(".history-row").forEach(item => item.remove());
 
   function createHistoryItem(c) {
     const wrapper = document.createElement("div");
