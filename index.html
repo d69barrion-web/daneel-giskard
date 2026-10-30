@@ -591,7 +591,21 @@ header {
     z-index: 1;
   }
 }
-  
+
+  .floating-history-dropdown {
+  position: fixed !important;
+  z-index: 999999 !important;
+  width: 190px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 5px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45);
+}
+
+.floating-history-dropdown[hidden] {
+  display: none !important;
+}
 </style>
 </head>
 
@@ -1113,6 +1127,64 @@ function saveConversation() {
 }
 
 
+
+let floatingHistoryMenu = null;
+
+function closeHistoryMenu() {
+  if (floatingHistoryMenu) {
+    floatingHistoryMenu.hidden = true;
+  }
+}
+
+function showHistoryMenu(button, conversationId) {
+  if (!floatingHistoryMenu) {
+    floatingHistoryMenu = document.createElement("div");
+    floatingHistoryMenu.className = "history-dropdown floating-history-dropdown";
+    document.body.appendChild(floatingHistoryMenu);
+  }
+
+  floatingHistoryMenu.replaceChildren();
+
+  const renameBtn = document.createElement("button");
+  renameBtn.className = "history-dropdown-item";
+  renameBtn.textContent = "✏️ Palitan ang pamagat";
+  renameBtn.onclick = () => {
+    closeHistoryMenu();
+    renameConversation(conversationId);
+  };
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.className = "history-dropdown-item delete-option";
+  deleteBtn.textContent = "🗑️ Burahin ang usapan";
+  deleteBtn.onclick = () => {
+    closeHistoryMenu();
+    deleteConversation(conversationId);
+  };
+
+  floatingHistoryMenu.append(renameBtn, deleteBtn);
+
+  const rect = button.getBoundingClientRect();
+
+  floatingHistoryMenu.hidden = false;
+
+  const menuWidth = 190;
+  const menuHeight = 100;
+
+  let left = Math.max(
+    8,
+    Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8)
+  );
+
+  let top = rect.bottom + 5;
+
+  if (top + menuHeight > window.innerHeight - 8) {
+    top = rect.top - menuHeight - 5;
+  }
+
+  floatingHistoryMenu.style.left = left + "px";
+  floatingHistoryMenu.style.top = Math.max(8, top) + "px";
+}
+
 function renderHistory() {
   const desktop = $("history");
   const mobile = $("mobileHistory");
@@ -1139,45 +1211,28 @@ function renderHistory() {
     menuBtn.title = "Mga opsyon";
     menuBtn.setAttribute("aria-label", "Mga opsyon sa usapan");
 
-    const menu = document.createElement("div");
-    menu.className = "history-dropdown";
-    menu.hidden = true;
-
-    const renameBtn = document.createElement("button");
-    renameBtn.className = "history-dropdown-item";
-    renameBtn.textContent = "✏️ Palitan ang pamagat";
-
-    renameBtn.onclick = (event) => {
-      event.stopPropagation();
-      menu.hidden = true;
-      renameConversation(c.id);
-    };
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className =
-      "history-dropdown-item delete-option";
-    deleteBtn.textContent = "🗑️ Burahin ang usapan";
-
-    deleteBtn.onclick = (event) => {
-      event.stopPropagation();
-      menu.hidden = true;
-      deleteConversation(c.id);
-    };
-
-    menu.append(renameBtn, deleteBtn);
-
     menuBtn.onclick = (event) => {
       event.stopPropagation();
 
-      document.querySelectorAll(".history-dropdown").forEach(item => {
-        if (item !== menu) item.hidden = true;
-      });
+      if (
+        floatingHistoryMenu &&
+        !floatingHistoryMenu.hidden &&
+        floatingHistoryMenu.dataset.conversationId === c.id &&
+        floatingHistoryMenu.dataset.buttonType ===
+          (wrapper.parentElement.id || "")
+      ) {
+        closeHistoryMenu();
+        return;
+      }
 
-      menu.hidden = !menu.hidden;
+      showHistoryMenu(menuBtn, c.id);
+
+      floatingHistoryMenu.dataset.conversationId = c.id;
+      floatingHistoryMenu.dataset.buttonType =
+        wrapper.parentElement.id || "";
     };
 
-    wrapper.append(titleBtn, menuBtn, menu);
-
+    wrapper.append(titleBtn, menuBtn);
     return wrapper;
   }
 
@@ -1186,11 +1241,20 @@ function renderHistory() {
     mobile.appendChild(createHistoryItem(c));
   });
 }
-document.addEventListener("click", () => {
-  document.querySelectorAll(".history-dropdown").forEach(menu => {
-    menu.hidden = true;
-  });
+
+document.addEventListener("click", (event) => {
+  if (
+    floatingHistoryMenu &&
+    !floatingHistoryMenu.hidden &&
+    !floatingHistoryMenu.contains(event.target)
+  ) {
+    closeHistoryMenu();
+  }
 });
+
+window.addEventListener("resize", closeHistoryMenu);
+window.addEventListener("scroll", closeHistoryMenu, true);
+
 
   let renameTargetId = null;
 
