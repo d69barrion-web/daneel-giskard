@@ -415,17 +415,17 @@ header {
     border-bottom:1px solid var(--line);
     background:#131e2d;
   }
-  .mobile-history button {
-    flex-shrink:0;
-    max-width:180px;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    padding:9px 12px;
-    border-radius:10px;
-    border:1px solid var(--line);
-    background:var(--panel);
-    color:var(--muted);
-    font-size:12px;
-  }
+  .mobile-history {
+  display: flex;
+  gap: 7px;
+  padding: 9px 12px;
+  overflow-x: auto;
+  overflow-y: visible;
+  position: relative;
+  z-index: 1;
+  border-bottom: 1px solid var(--line);
+  background: #131e2d;
+}
   .mobile-history button.active {
     color:white;border-color:var(--blue);
   }
