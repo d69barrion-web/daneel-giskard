@@ -1056,11 +1056,13 @@ function renderHistory() {
     menuBtn.onclick = (event) => {
       event.stopPropagation();
 
-      document.querySelectorAll(".history-dropdown").forEach(otherMenu => {
-        if (otherMenu !== menu) {
-          otherMenu.hidden = true;
-        }
-      });
+      menuBtn.onclick = (event) => {
+  event.stopPropagation();
+
+  alert("Gumagana ang three-dot button!");
+
+  menu.hidden = !menu.hidden;
+};
 
       menu.hidden = !menu.hidden;
     };
