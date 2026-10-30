@@ -934,30 +934,197 @@ function renderHistory() {
   desktop.replaceChildren();
   mobile.replaceChildren();
 
-  [...conversations].forEach(c => {
-    const a = document.createElement("button");
+  function createHistoryItem(c) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "history-row";
 
-    a.className = "history-item" +
+    const titleBtn = document.createElement("button");
+    titleBtn.className =
+      "history-item" +
       (c.id === activeConversationId ? " active" : "");
 
-    a.textContent = c.title;
-    a.title = c.title;
-    a.onclick = () => switchConversation(c.id);
+    titleBtn.textContent = c.title;
+    titleBtn.title = c.title;
+    titleBtn.onclick = () => switchConversation(c.id);
 
-    desktop.appendChild(a);
+    const menuBtn = document.createElement("button");
+    menuBtn.className = "history-menu-btn";
+    menuBtn.textContent = "⋮";
+    menuBtn.title = "Mga opsyon";
+    menuBtn.setAttribute("aria-label", "Mga opsyon sa usapan");
 
-    const b = document.createElement("button");
+    menuBtn.onclick = (event) => {
+      event.stopPropagation();
 
-    b.className =
-      c.id === activeConversationId ? "active" : "";
+      const choice = prompt(
+        "Mga opsyon para sa usapan:\n\n" +
+        "1 - Palitan ang pamagat\n" +
+        "2 - Burahin ang usapan\n\n" +
+        "Ilagay ang numero:"
+      );
 
-    b.textContent = c.title;
-    b.onclick = () => switchConversation(c.id);
+      if (choice === "1") {
+        renameConversation(c.id);
+      } else if (choice === "2") {
+        deleteConversation(c.id);
+      }
+    };
 
-    mobile.appendChild(b);
+    wrapper.append(titleBtn, menuBtn);
+
+    return wrapper;
+  }
+
+  conversations.forEach(c => {
+    desktop.appendChild(createHistoryItem(c));
+    mobile.appendChild(createHistoryItem(c));
   });
 }
 
+  async function renameConversation(id) {
+  const c = conversations.find(item => item.id === id);
+  if (!c || !currentUser) return;
+
+  const newTitle = prompt(
+    "Ilagay ang bagong pamagat:",
+    c.title
+  );
+
+  if (newTitle === null) return;
+
+  const cleanTitle = newTitle.trim();
+
+  if (!cleanTitle) {
+    alert("Hindi maaaring walang pamagat.");
+    return;
+  }
+
+  if (cleanTitle.length > 60) {
+    alert("Hanggang 60 characters lamang ang pamagat.");
+    return;
+  }
+
+  try {
+    status.textContent = "● Ina-update ang pamagat...";
+
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(
+      `${API_URL.replace("/chat", "")}/conversations/${id}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          title: cleanTitle
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi mapalitan ang pamagat.");
+    }
+
+    c.title = data.title;
+    renderHistory();
+
+    status.textContent = "● Na-update ang pamagat";
+
+  } catch (error) {
+    console.error("Rename error:", error);
+    status.textContent = "● " + error.message;
+    alert(error.message);
+  }
+}
+
+  async function deleteConversation(id) {
+  const c = conversations.find(item => item.id === id);
+  if (!c || !currentUser) return;
+
+  const confirmed = confirm(
+    'Sigurado ka bang buburahin ang "' +
+    c.title +
+    '"?\n\nKasama nitong mabubura ang lahat ng mensahe nito. Hindi na ito maibabalik.'
+  );
+
+  if (!confirmed) return;
+
+  try {
+    status.textContent = "● Binubura ang usapan...";
+
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(
+      `${API_URL.replace("/chat", "")}/conversations/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi mabura ang usapan.");
+    }
+
+    conversations = conversations.filter(item => item.id !== id);
+
+    if (activeConversationId === id) {
+      activeConversationId = null;
+
+      if (conversations.length === 0) {
+        // Gumawa ng bagong blank conversation.
+        const createToken = await currentUser.getIdToken();
+
+        const createResponse = await fetch(
+          `${API_URL.replace("/chat", "")}/conversations`,
+          {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${createToken}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({})
+          }
+        );
+
+        if (!createResponse.ok) {
+          throw new Error("Nabura ang usapan pero hindi nakagawa ng bago.");
+        }
+
+        const created = await createResponse.json();
+
+        conversations.push({
+          ...created.conversation,
+          messages: []
+        });
+      }
+
+      activeConversationId = conversations[0].id;
+
+      await loadConversationMessages(activeConversationId);
+      renderChat();
+    }
+
+    renderHistory();
+    updateMemoryView();
+
+    status.textContent = "● Nabura na ang usapan";
+
+  } catch (error) {
+    console.error("Delete conversation error:", error);
+    status.textContent = "● " + error.message;
+    alert(error.message);
+  }
+}
+  
 async function switchConversation(id) {
   if (busy || id === activeConversationId) return;
 
