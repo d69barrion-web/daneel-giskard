@@ -1072,6 +1072,33 @@ header {
 .code-preview-btn:active {
     transform: scale(0.97);
 }
+    /* Copy button for complete chat messages */
+.message-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-top: 5px;
+  padding: 0;
+  border: 1px solid #52647a;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: 0.2s ease;
+}
+
+.message-copy-btn:hover {
+  opacity: 1;
+  background: var(--panel2);
+}
+
+.message-copy-btn:active {
+  transform: scale(0.92);
+}
     
 </style>
 </head>
@@ -2489,14 +2516,48 @@ function addMessageElement(role, text) {
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  if (role === "bot") {
-  renderCodeContent(bubble, String(text));
-} else {
-  bubble.textContent = String(text);
-}
 
-  wrapper.append(sender, bubble);
+  const originalText = String(text);
+
+  if (role === "bot") {
+    renderCodeContent(bubble, originalText);
+  } else {
+    bubble.textContent = originalText;
+  }
+
+  // Copy button for the entire message
+  const copyButton = document.createElement("button");
+  copyButton.className = "message-copy-btn";
+  copyButton.type = "button";
+  copyButton.textContent = "📋";
+  copyButton.title = "Copy entire message";
+  copyButton.setAttribute("aria-label", "Copy entire message");
+
+  copyButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(originalText);
+
+      copyButton.textContent = "✓";
+      copyButton.title = "Copied!";
+
+      setTimeout(() => {
+        copyButton.textContent = "📋";
+        copyButton.title = "Copy entire message";
+      }, 1500);
+
+    } catch (error) {
+      console.error("Message copy failed:", error);
+      copyButton.textContent = "✕";
+
+      setTimeout(() => {
+        copyButton.textContent = "📋";
+      }, 1500);
+    }
+  });
+
+  wrapper.append(sender, bubble, copyButton);
   chat.appendChild(wrapper);
+
   return wrapper;
 }
 
