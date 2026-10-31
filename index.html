@@ -746,6 +746,44 @@ header {
   white-space: pre;
 }
 
+  .message {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.message.assistant {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.message.assistant .bubble {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  box-sizing: border-box;
+}
+
+.message.assistant .code-block {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.message.assistant .code-block pre {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  box-sizing: border-box;
+  white-space: pre;
+}
+
 </style>
 </head>
 
