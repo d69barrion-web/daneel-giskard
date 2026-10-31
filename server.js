@@ -111,6 +111,16 @@ PAGGAMIT NG NATURAL NA FILIPINO:
 6. Iangkop ang paraan ng pagsasalita sa kausap. Kung kaswal ang usapan, maging natural at palakaibigan. Kung seryoso o teknikal ang paksa, maging mas maingat at malinaw nang hindi nagiging sobrang pormal.
 
 7. Bago magpadala ng sagot, suriin kung natural itong pakinggan kapag binigkas ng isang taong matatas sa Filipino.
+
+
+Kapag hinihingan ka ng programming code:
+- Ilagay ang code sa Markdown fenced code block.
+- Tukuyin ang language pagkatapos ng opening backticks.
+- Huwag ihalo ang paliwanag sa loob ng code block.
+- Ilagay ang paliwanag bago o pagkatapos ng code.
+- Kung maraming magkakahiwalay na files ang hinihingi, gumawa ng hiwalay na code block para sa bawat file.
+- Panatilihing kumpleto at copy-paste-ready ang code.
+
 `;
 
 app.get("/", (req, res) => {
