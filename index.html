@@ -667,6 +667,55 @@ header {
 }
 
   
+.code-block {
+  margin: 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0b1220;
+}
+
+.code-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
+  background: #172337;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.copy-code-btn {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 6px 9px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 14px;
+  overflow-x: auto;
+  white-space: pre;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #dce8f8;
+}
+
+.code-block code {
+  font-family: monospace;
+}
+
+.assistant-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 </style>
 </head>
 
@@ -1583,6 +1632,74 @@ function updateMemoryView() {
 
   $("notes").value = state.notes || "";
 }
+
+function renderCodeContent(container, text) {
+  const pattern = /```([^\n]*)\n([\s\S]*?)```/g;
+
+  let lastIndex = 0;
+  let match;
+
+  while ((match = pattern.exec(text)) !== null) {
+    // Ordinaryong paliwanag bago ang code
+    if (match.index > lastIndex) {
+      const paragraph = document.createElement("div");
+      paragraph.className = "assistant-text";
+      paragraph.textContent = text.slice(lastIndex, match.index);
+      container.appendChild(paragraph);
+    }
+
+    const language = match[1].trim() || "code";
+    const code = match[2].replace(/\n$/, "");
+
+    const block = document.createElement("div");
+    block.className = "code-block";
+
+    const toolbar = document.createElement("div");
+    toolbar.className = "code-toolbar";
+
+    const label = document.createElement("span");
+    label.textContent = language;
+
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "copy-code-btn";
+    copyBtn.textContent = "📋 Kopyahin ang code";
+
+    const pre = document.createElement("pre");
+    const codeElement = document.createElement("code");
+    codeElement.textContent = code;
+
+    pre.appendChild(codeElement);
+
+    copyBtn.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(code);
+        copyBtn.textContent = "✓ Nakopya!";
+      } catch (error) {
+        copyBtn.textContent = "Hindi nakopya";
+      }
+
+      setTimeout(() => {
+        copyBtn.textContent = "📋 Kopyahin ang code";
+      }, 1800);
+    };
+
+    toolbar.append(label, copyBtn);
+    block.append(toolbar, pre);
+    container.appendChild(block);
+
+    lastIndex = pattern.lastIndex;
+  }
+
+  // Natitirang ordinaryong text pagkatapos ng code
+  if (lastIndex < text.length) {
+    const paragraph = document.createElement("div");
+    paragraph.className = "assistant-text";
+    paragraph.textContent = text.slice(lastIndex);
+    container.appendChild(paragraph);
+  }
+}
+
 function addMessageElement(role, text) {
   const wrapper = document.createElement("div");
   wrapper.className = "message " + role;
@@ -1593,7 +1710,11 @@ function addMessageElement(role, text) {
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
+  if (role === "bot") {
+  renderCodeContent(bubble, String(text));
+} else {
   bubble.textContent = String(text);
+}
 
   wrapper.append(sender, bubble);
   chat.appendChild(wrapper);
