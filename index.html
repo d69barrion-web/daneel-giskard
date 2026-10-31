@@ -1043,6 +1043,35 @@ header {
 .markdown-content > :last-child {
     margin-bottom: 0;
 }
+    /* Restore styling for code-block buttons */
+.code-actions button,
+.code-copy-btn,
+.code-preview-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: #343a40;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.code-actions button:hover,
+.code-copy-btn:hover,
+.code-preview-btn:hover {
+    background: #505860;
+}
+
+.code-actions button:active,
+.code-copy-btn:active,
+.code-preview-btn:active {
+    transform: scale(0.97);
+}
     
 </style>
 </head>
