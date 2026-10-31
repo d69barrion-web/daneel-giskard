@@ -825,7 +825,119 @@ header {
 .code-preview-frame[hidden] {
   display: none;
 }
+  
+/* Daneel Feature Menu */
+.composer-tools {
+  position: relative;
+  flex-shrink: 0;
+}
 
+.plus-btn {
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel2);
+  color: white;
+  font-size: 27px;
+  display: grid;
+  place-items: center;
+}
+
+.plus-btn:hover,
+.plus-btn[aria-expanded="true"] {
+  background: #263d5c;
+  border-color: var(--blue);
+}
+
+.feature-menu {
+  position: absolute;
+  bottom: 58px;
+  left: 0;
+  z-index: 500;
+  width: 245px;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 10px 30px rgba(0,0,0,.45);
+}
+
+.feature-menu[hidden],
+.feature-panel[hidden] {
+  display: none;
+}
+
+.feature-menu button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 11px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font-size: 14px;
+}
+
+.feature-menu button:hover {
+  background: var(--panel2);
+}
+
+.feature-icon {
+  font-size: 22px;
+}
+
+.feature-panel {
+  max-width: 800px;
+  margin: 0 auto 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--bg);
+}
+
+.feature-panel h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+.feature-panel textarea,
+.feature-panel input[type="file"] {
+  width: 100%;
+  margin: 5px 0 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.feature-panel textarea {
+  min-height: 75px;
+  resize: vertical;
+}
+
+.feature-panel-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.feature-panel-actions button {
+  padding: 9px 13px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel2);
+  color: white;
+}
+
+.feature-panel-actions .feature-close {
+  background: transparent;
+}
 </style>
 </head>
 
@@ -882,17 +994,58 @@ header {
         <div id="chat"></div>
 
         <div class="composer">
-          <div id="inputArea">
-            <textarea id="message" rows="1"
-              placeholder="Kuwento ka lang, kaibigan..."
-              aria-label="Mensahe kay Daneel"></textarea>
-            <button id="sendBtn" aria-label="Ipadala">↑</button>
-          </div>
-          <p class="hint">
-            Ang pag-uusap na ito ay personal mong diary.
-            Mag-backup upang mapangalagaan ang mga naitala.
-          </p>
-        </div>
+
+  <!-- Feature controls -->
+  <div id="featurePanel" class="feature-panel" hidden>
+    <h3 id="featureTitle"></h3>
+
+    <div id="featureContent"></div>
+
+    <div class="feature-panel-actions">
+      <button type="button" class="feature-close"
+        id="closeFeatureBtn">Kanselahin</button>
+    </div>
+  </div>
+
+  <div id="inputArea">
+
+    <!-- Plus button and floating menu -->
+    <div class="composer-tools">
+
+      <button type="button"
+        class="plus-btn"
+        id="featureMenuBtn"
+        aria-label="Mga kakayahan ni Daneel"
+        aria-expanded="false">＋</button>
+
+      <div class="feature-menu" id="featureMenu" hidden>
+
+        <button type="button" data-feature="generate">
+          <span class="feature-icon">🎨</span>
+          <span>Gumawa ng larawan</span>
+        </button>
+
+        <button type="button" data-feature="edit">
+          <span class="feature-icon">🖼️</span>
+          <span>Mag-edit ng larawan</span>
+        </button>
+
+      </div>
+    </div>
+
+    <textarea id="message" rows="1"
+      placeholder="Kuwento ka lang, kaibigan..."
+      aria-label="Mensahe kay Daneel"></textarea>
+
+    <button id="sendBtn" aria-label="Ipadala">↑</button>
+
+  </div>
+
+  <p class="hint">
+    Ang pag-uusap na ito ay personal mong diary.
+    Mag-backup upang mapangalagaan ang mga naitala.
+  </p>
+</div>
       </section>
 
       <section class="view memory-view" id="memoryView">
@@ -1346,6 +1499,97 @@ const chat = $("chat");
 const input = $("message");
 const sendBtn = $("sendBtn");
 const status = $("status");
+
+// ===================================
+// DANEEL FEATURE MENU
+// ===================================
+
+const featureMenuBtn = $("featureMenuBtn");
+const featureMenu = $("featureMenu");
+const featurePanel = $("featurePanel");
+const featureTitle = $("featureTitle");
+const featureContent = $("featureContent");
+
+function toggleFeatureMenu() {
+  const isOpen = !featureMenu.hidden;
+
+  featureMenu.hidden = isOpen;
+  featureMenuBtn.setAttribute(
+    "aria-expanded",
+    String(!isOpen)
+  );
+}
+
+function closeFeatureMenu() {
+  featureMenu.hidden = true;
+  featureMenuBtn.setAttribute("aria-expanded", "false");
+}
+
+function closeFeaturePanel() {
+  featurePanel.hidden = true;
+  featureContent.replaceChildren();
+}
+
+function openFeature(feature) {
+  closeFeatureMenu();
+
+  featurePanel.hidden = false;
+  featureContent.replaceChildren();
+
+  if (feature === "generate") {
+    featureTitle.textContent = "🎨 Gumawa ng larawan";
+
+    const prompt = document.createElement("textarea");
+    prompt.id = "imagePrompt";
+    prompt.placeholder =
+      "Ilarawan ang larawang gusto mong ipagawa kay Daneel...";
+
+    featureContent.appendChild(prompt);
+  }
+
+  if (feature === "edit") {
+    featureTitle.textContent = "🖼️ Mag-edit ng larawan";
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.id = "editImageFile";
+    fileInput.accept = "image/*";
+
+    const prompt = document.createElement("textarea");
+    prompt.id = "editImagePrompt";
+    prompt.placeholder =
+      "Ilarawan kung anong pagbabago ang gusto mo sa larawan...";
+
+    featureContent.append(fileInput, prompt);
+  }
+}
+
+featureMenuBtn.addEventListener("click", toggleFeatureMenu);
+
+featureMenu.querySelectorAll("[data-feature]").forEach(button => {
+  button.addEventListener("click", () => {
+    openFeature(button.dataset.feature);
+  });
+});
+
+$("closeFeatureBtn").addEventListener("click", closeFeaturePanel);
+
+document.addEventListener("click", event => {
+  if (
+    !featureMenu.hidden &&
+    !featureMenu.contains(event.target) &&
+    !featureMenuBtn.contains(event.target)
+  ) {
+    closeFeatureMenu();
+  }
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    closeFeatureMenu();
+    closeFeaturePanel();
+  }
+});
 
 let busy = false;
 let state = loadState();
