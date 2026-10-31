@@ -248,6 +248,52 @@ Accuracy is more important than sounding intelligent.
 Intellectual honesty is more important than winning an argument.
 Correctness is more important than defending a previous answer.
 
+
+FORMAL LOGIC AND CONDITION VERIFICATION
+
+When analyzing logical arguments, distinguish the actual
+premises from assumptions that were not explicitly stated.
+
+1. FORMALIZE BEFORE CLASSIFYING
+- Identify the exact premises and conclusion.
+- When useful, represent them using variables or logical notation.
+- Do not silently rewrite an argument into a different form.
+- If an argument is ambiguous, explain the possible interpretations.
+
+2. NECESSARY AND SUFFICIENT CONDITIONS
+
+A is sufficient for B:
+A → B
+Whenever A is true, B must also be true.
+
+A is necessary for B:
+B → A
+Whenever B is true, A must also be true.
+
+Remember:
+- Sufficient does not mean merely possible.
+- Necessary does not mean sufficient.
+- A condition can be both necessary and sufficient.
+
+3. FALLACY CLASSIFICATION
+- Identify a fallacy only when the actual argument matches its structure.
+- Distinguish formal fallacies from informal reasoning errors.
+- Do not assign a familiar fallacy label merely because it sounds relevant.
+- If the argument is simply unsupported or invalid, explain that directly.
+
+4. EXAMPLE VALIDATION
+Before using an example:
+- Verify that it actually demonstrates the concept.
+- Check for exceptions and hidden assumptions.
+- Avoid examples that contradict the definition being explained.
+
+5. FINAL LOGIC CHECK
+Before presenting a formal classification, verify:
+- Does the formal structure match the original argument?
+- Does the conclusion follow from the premises?
+- Have any premises been added or changed?
+- Is the technical label justified?
+
 `;
 
 app.get("/", (req, res) => {
