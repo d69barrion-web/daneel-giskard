@@ -967,7 +967,83 @@ header {
   text-decoration: none;
   font-size: 13px;
 }
-  
+  /* Markdown formatting */
+.markdown-content {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.6;
+}
+
+.markdown-content p {
+    margin: 0 0 12px;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+    margin: 18px 0 10px;
+    line-height: 1.3;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+    padding-left: 24px;
+    margin: 8px 0 14px;
+}
+
+.markdown-content li {
+    margin: 5px 0;
+}
+
+.markdown-content blockquote {
+    margin: 12px 0;
+    padding: 8px 14px;
+    border-left: 3px solid #888;
+    background: rgba(128, 128, 128, 0.08);
+}
+
+.markdown-content a {
+    text-decoration: underline;
+    overflow-wrap: anywhere;
+}
+
+.markdown-content table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    margin: 12px 0;
+}
+
+.markdown-content th,
+.markdown-content td {
+    border: 1px solid #8886;
+    padding: 8px 10px;
+    text-align: left;
+}
+
+.markdown-content th {
+    font-weight: bold;
+}
+
+.markdown-content :not(pre) > code {
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: rgba(128, 128, 128, 0.18);
+    overflow-wrap: anywhere;
+}
+
+.markdown-content hr {
+    border: 0;
+    border-top: 1px solid #8886;
+    margin: 16px 0;
+}
+
+.markdown-content > :last-child {
+    margin-bottom: 0;
+}
+    
 </style>
 </head>
 
@@ -2255,134 +2331,124 @@ function updateMemoryView() {
 }
 
 function renderCodeContent(container, text) {
-  const pattern = /```([^\n]*)\n([\s\S]*?)```/g;
+    const pattern = /```([^\n]*)\n([\s\S]*?)```/g;
 
-  let lastIndex = 0;
-  let match;
+    let lastIndex = 0;
+    let match;
 
-  while ((match = pattern.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      const paragraph = document.createElement("div");
-      paragraph.className = "assistant-text";
-      paragraph.textContent = text.slice(lastIndex, match.index);
-      container.appendChild(paragraph);
+    container.innerHTML = "";
+
+    function renderMarkdown(content) {
+        if (!content) return;
+
+        const html = marked.parse(content, {
+            gfm: true,
+            breaks: true
+        });
+
+        const safeHTML = DOMPurify.sanitize(html);
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "markdown-content";
+        wrapper.innerHTML = safeHTML;
+
+        container.appendChild(wrapper);
     }
 
-    const language = match[1].trim().toLowerCase() || "code";
-    const code = match[2].replace(/\n$/, "");
+    while ((match = pattern.exec(text)) !== null) {
+        // Markdown text bago ang code block
+        renderMarkdown(text.slice(lastIndex, match.index));
 
-    const isHTML = ["html", "htm", "xhtml"].includes(language);
+        const language = match[1].trim().toLowerCase() || "plaintext";
+        const code = match[2].replace(/\n$/, "");
 
-    const block = document.createElement("div");
-    block.className = "code-block";
+        // Code block container
+        const block = document.createElement("div");
+        block.className = "code-block";
 
-    const toolbar = document.createElement("div");
-    toolbar.className = "code-toolbar";
+        // Toolbar
+        const toolbar = document.createElement("div");
+        toolbar.className = "code-toolbar";
 
-    const label = document.createElement("span");
-    label.textContent = language;
+        const languageLabel = document.createElement("span");
+        languageLabel.textContent = language;
 
-    const actions = document.createElement("div");
-    actions.className = "code-actions";
+        const actions = document.createElement("div");
+        actions.className = "code-actions";
 
-    const copyBtn = document.createElement("button");
-    copyBtn.type = "button";
-    copyBtn.className = "copy-code-btn";
-    copyBtn.textContent = "📋 Kopyahin";
+        // Copy button
+        const copyButton = document.createElement("button");
+        copyButton.className = "code-copy-btn";
+        copyButton.textContent = "Copy";
 
-    const pre = document.createElement("pre");
-    const codeElement = document.createElement("code");
+        copyButton.addEventListener("click", async () => {
+            try {
+                await navigator.clipboard.writeText(code);
+                copyButton.textContent = "Copied!";
+                setTimeout(() => {
+                    copyButton.textContent = "Copy";
+                }, 1500);
+            } catch (error) {
+                copyButton.textContent = "Failed";
+            }
+        });
 
-    const languageAliases = {
-  js: "javascript",
-  html: "xml",
-  htm: "xml",
-  svg: "xml",
-  xml: "xml",
-  ts: "typescript",
-  py: "python",
-  yml: "yaml",
-  sh: "bash"
-};
+        actions.appendChild(copyButton);
 
-const highlightLanguage =
-  languageAliases[language] || language;
+        // Code display
+        const pre = document.createElement("pre");
+        const codeElement = document.createElement("code");
 
-if (window.hljs && hljs.getLanguage(highlightLanguage)) {
-  codeElement.className = "language-" + highlightLanguage;
-}
+        codeElement.className = `language-${language}`;
+        codeElement.textContent = code;
 
-    codeElement.textContent = code;
-    pre.appendChild(codeElement);
+        pre.appendChild(codeElement);
 
-    // Syntax highlighting
-    if (window.hljs) {
-  hljs.highlightElement(codeElement);
-}
+        // Highlight.js
+        if (window.hljs) {
+            try {
+                hljs.highlightElement(codeElement);
+            } catch (error) {
+                console.warn("Code highlighting failed:", error);
+            }
+        }
 
-    // Copy code
-    copyBtn.onclick = async () => {
-      try {
-        await navigator.clipboard.writeText(code);
-        copyBtn.textContent = "✓ Nakopya!";
-      } catch (error) {
-        copyBtn.textContent = "Hindi nakopya";
-      }
+        // HTML Live Preview
+        if (language === "html") {
+            const previewButton = document.createElement("button");
+            previewButton.className = "code-preview-btn";
+            previewButton.textContent = "Live Preview";
 
-      setTimeout(() => {
-        copyBtn.textContent = "📋 Kopyahin";
-      }, 1800);
-    };
+            previewButton.addEventListener("click", () => {
+                const previewWindow = window.open("", "_blank");
 
-    actions.appendChild(copyBtn);
+                if (!previewWindow) {
+                    alert("Please allow pop-ups to use Live Preview.");
+                    return;
+                }
 
-    // Live HTML preview
-    if (isHTML) {
-      const previewBtn = document.createElement("button");
-      previewBtn.type = "button";
-      previewBtn.className = "copy-code-btn";
-      previewBtn.textContent = "▶ Live preview";
+                previewWindow.document.open();
+                previewWindow.document.write(code);
+                previewWindow.document.close();
+            });
 
-      const previewFrame = document.createElement("iframe");
-      previewFrame.className = "code-preview-frame";
-      previewFrame.title = "HTML Live Preview";
-      previewFrame.setAttribute("sandbox", "allow-scripts");
-      previewFrame.setAttribute("referrerpolicy", "no-referrer");
-      previewFrame.hidden = true;
+            actions.appendChild(previewButton);
+        }
 
-  previewBtn.onclick = () => {
-  const previewWindow = window.open("about:blank", "_blank");
+        toolbar.appendChild(languageLabel);
+        toolbar.appendChild(actions);
 
-  if (!previewWindow) {
-    alert("Hindi nabuksan ang preview. Pakipahintulutan ang pop-ups sa browser.");
-    return;
-  }
+        block.appendChild(toolbar);
+        block.appendChild(pre);
 
-  previewWindow.document.open();
-  previewWindow.document.write(code);
-  previewWindow.document.close();
-};
+        container.appendChild(block);
 
-      actions.appendChild(previewBtn);
-      
+        lastIndex = pattern.lastIndex;
     }
 
-    toolbar.append(label, actions);
-    block.prepend(toolbar);
-    block.appendChild(pre);
-    container.appendChild(block);
-
-    lastIndex = pattern.lastIndex;
-  }
-
-  if (lastIndex < text.length) {
-    const paragraph = document.createElement("div");
-    paragraph.className = "assistant-text";
-    paragraph.textContent = text.slice(lastIndex);
-    container.appendChild(paragraph);
-  }
+    // Natitirang Markdown text pagkatapos ng huling code block
+    renderMarkdown(text.slice(lastIndex));
 }
-
 
 function addMessageElement(role, text) {
   const wrapper = document.createElement("div");
