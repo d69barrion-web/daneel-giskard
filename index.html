@@ -1000,7 +1000,7 @@ header {
     </div>
   </div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
 <script>
 const API_URL = "https://daneel-giskard.onrender.com/chat";
 
@@ -2009,7 +2009,8 @@ async function sendMessage() {
       throw new Error("Walang valid na reply sa server response.");
     }
 
-    loading.querySelector(".bubble").textContent = data.reply;
+loading.remove();
+addMessageElement("bot", data.reply);
 
     c.messages.push({
       role: "bot",
