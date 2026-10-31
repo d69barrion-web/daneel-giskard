@@ -534,7 +534,11 @@ Do not guess their name.
 `;
 
         const response = await client.responses.create({
-      model: "gpt-5-mini",
+  model: "gpt-5.4-mini-2026-03-17",
+
+  reasoning: {
+    effort: "low"
+  },
       instructions:
         DANEEL_INSTRUCTIONS +
         "\n\n" +
