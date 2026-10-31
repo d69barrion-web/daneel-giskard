@@ -2,6 +2,10 @@
 <!DOCTYPE html>
 <html lang="tl">
 <head>
+  <link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css"
+>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#101827">
@@ -795,6 +799,33 @@ header {
 .code-block code {
   white-space: pre;
 }
+  /* Code toolbar buttons */
+.code-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* Highlight.js code formatting */
+.code-block pre code {
+  font-family: monospace;
+  white-space: pre;
+}
+
+/* Live HTML preview */
+.code-preview-frame {
+  display: block;
+  width: 100%;
+  height: 320px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: white;
+}
+
+.code-preview-frame[hidden] {
+  display: none;
+}
 
 </style>
 </head>
@@ -970,6 +1001,7 @@ header {
     </div>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/common.min.js"></script>
 <script>
 const API_URL = "https://daneel-giskard.onrender.com/chat";
 
@@ -1720,7 +1752,6 @@ function renderCodeContent(container, text) {
   let match;
 
   while ((match = pattern.exec(text)) !== null) {
-    // Ordinaryong paliwanag bago ang code
     if (match.index > lastIndex) {
       const paragraph = document.createElement("div");
       paragraph.className = "assistant-text";
@@ -1728,8 +1759,10 @@ function renderCodeContent(container, text) {
       container.appendChild(paragraph);
     }
 
-    const language = match[1].trim() || "code";
+    const language = match[1].trim().toLowerCase() || "code";
     const code = match[2].replace(/\n$/, "");
+
+    const isHTML = ["html", "htm", "xhtml"].includes(language);
 
     const block = document.createElement("div");
     block.className = "code-block";
@@ -1740,17 +1773,34 @@ function renderCodeContent(container, text) {
     const label = document.createElement("span");
     label.textContent = language;
 
+    const actions = document.createElement("div");
+    actions.className = "code-actions";
+
     const copyBtn = document.createElement("button");
     copyBtn.type = "button";
     copyBtn.className = "copy-code-btn";
-    copyBtn.textContent = "📋 Kopyahin ang code";
+    copyBtn.textContent = "📋 Kopyahin";
 
     const pre = document.createElement("pre");
     const codeElement = document.createElement("code");
-    codeElement.textContent = code;
 
+    if (window.hljs && hljs.getLanguage(language)) {
+      codeElement.className = "language-" + language;
+    }
+
+    codeElement.textContent = code;
     pre.appendChild(codeElement);
 
+    // Syntax highlighting
+    if (window.hljs) {
+      if (hljs.getLanguage(language)) {
+        hljs.highlightElement(codeElement);
+      } else {
+        hljs.highlightElement(codeElement);
+      }
+    }
+
+    // Copy code
     copyBtn.onclick = async () => {
       try {
         await navigator.clipboard.writeText(code);
@@ -1760,18 +1810,50 @@ function renderCodeContent(container, text) {
       }
 
       setTimeout(() => {
-        copyBtn.textContent = "📋 Kopyahin ang code";
+        copyBtn.textContent = "📋 Kopyahin";
       }, 1800);
     };
 
-    toolbar.append(label, copyBtn);
-    block.append(toolbar, pre);
+    actions.appendChild(copyBtn);
+
+    // Live HTML preview
+    if (isHTML) {
+      const previewBtn = document.createElement("button");
+      previewBtn.type = "button";
+      previewBtn.className = "copy-code-btn";
+      previewBtn.textContent = "▶ Live preview";
+
+      const previewFrame = document.createElement("iframe");
+      previewFrame.className = "code-preview-frame";
+      previewFrame.title = "HTML Live Preview";
+      previewFrame.setAttribute("sandbox", "allow-scripts");
+      previewFrame.setAttribute("referrerpolicy", "no-referrer");
+      previewFrame.hidden = true;
+
+      previewBtn.onclick = () => {
+        if (previewFrame.hidden) {
+          previewFrame.srcdoc = code;
+          previewFrame.hidden = false;
+          previewBtn.textContent = "✕ Isara preview";
+        } else {
+          previewFrame.hidden = true;
+          previewFrame.srcdoc = "";
+          previewBtn.textContent = "▶ Live preview";
+        }
+      };
+
+      actions.appendChild(previewBtn);
+      block.appendChild(previewFrame);
+    }
+
+    toolbar.append(label, actions);
+    block.prepend(toolbar);
+    block.appendChild(pre);
     container.appendChild(block);
 
     lastIndex = pattern.lastIndex;
   }
 
-  // Natitirang ordinaryong text pagkatapos ng code
   if (lastIndex < text.length) {
     const paragraph = document.createElement("div");
     paragraph.className = "assistant-text";
@@ -1779,6 +1861,7 @@ function renderCodeContent(container, text) {
     container.appendChild(paragraph);
   }
 }
+
 
 function addMessageElement(role, text) {
   const wrapper = document.createElement("div");
