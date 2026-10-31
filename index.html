@@ -1826,14 +1826,16 @@ document.querySelectorAll(".tab").forEach(tab => {
   tab.addEventListener("click", () => showView(tab.dataset.view));
 });
 
+
 sendBtn.addEventListener("click", sendMessage);
 
 input.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) {
+  if (e.key === "Enter" && e.ctrlKey) {
     e.preventDefault();
     sendMessage();
   }
 });
+
 input.addEventListener("input", resizeInput);
 
 $("saveNotes").addEventListener("click", () => {
