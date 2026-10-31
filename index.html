@@ -1840,20 +1840,21 @@ if (window.hljs && hljs.getLanguage(highlightLanguage)) {
       previewFrame.setAttribute("referrerpolicy", "no-referrer");
       previewFrame.hidden = true;
 
-      previewBtn.onclick = () => {
-        if (previewFrame.hidden) {
-          previewFrame.srcdoc = code;
-          previewFrame.hidden = false;
-          previewBtn.textContent = "✕ Isara preview";
-        } else {
-          previewFrame.hidden = true;
-          previewFrame.srcdoc = "";
-          previewBtn.textContent = "▶ Live preview";
-        }
-      };
+  previewBtn.onclick = () => {
+  const previewWindow = window.open("about:blank", "_blank");
+
+  if (!previewWindow) {
+    alert("Hindi nabuksan ang preview. Pakipahintulutan ang pop-ups sa browser.");
+    return;
+  }
+
+  previewWindow.document.open();
+  previewWindow.document.write(code);
+  previewWindow.document.close();
+};
 
       actions.appendChild(previewBtn);
-      block.appendChild(previewFrame);
+      
     }
 
     toolbar.append(label, actions);
