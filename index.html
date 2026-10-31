@@ -938,6 +938,33 @@ header {
 .feature-panel-actions .feature-close {
   background: transparent;
 }
+  /* Daneel Image Results */
+.image-result {
+  width: 100%;
+  max-width: 520px;
+  margin-top: 10px;
+}
+
+.image-result img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.image-download-btn {
+  display: inline-block;
+  margin-top: 9px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--blue);
+  color: white;
+  text-decoration: none;
+  font-size: 13px;
+}
+  
 </style>
 </head>
 
@@ -1541,10 +1568,19 @@ function openFeature(feature) {
 
     const prompt = document.createElement("textarea");
     prompt.id = "imagePrompt";
+    prompt.maxLength = 4000;
     prompt.placeholder =
       "Ilarawan ang larawang gusto mong ipagawa kay Daneel...";
 
-    featureContent.appendChild(prompt);
+    const generateBtn = document.createElement("button");
+    generateBtn.type = "button";
+    generateBtn.id = "generateImageBtn";
+    generateBtn.className = "primary-btn";
+    generateBtn.textContent = "Gumawa ng larawan";
+
+    generateBtn.addEventListener("click", generateImage);
+
+    featureContent.append(prompt, generateBtn);
   }
 
   if (feature === "edit") {
@@ -1553,14 +1589,241 @@ function openFeature(feature) {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.id = "editImageFile";
-    fileInput.accept = "image/*";
+    fileInput.accept = "image/jpeg,image/png,image/webp";
 
     const prompt = document.createElement("textarea");
     prompt.id = "editImagePrompt";
+    prompt.maxLength = 4000;
     prompt.placeholder =
       "Ilarawan kung anong pagbabago ang gusto mo sa larawan...";
 
-    featureContent.append(fileInput, prompt);
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.id = "editImageBtn";
+    editBtn.className = "primary-btn";
+    editBtn.textContent = "I-edit ang larawan";
+
+    editBtn.addEventListener("click", editImage);
+
+    featureContent.append(fileInput, prompt, editBtn);
+  }
+}
+
+// ===================================
+// DANEEL IMAGE GENERATION AND EDITING
+// ===================================
+
+const IMAGE_API_URL = API_URL.replace("/chat", "");
+
+function showImageResult(imageData, filename) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "message bot";
+
+  const sender = document.createElement("div");
+  sender.className = "sender";
+  sender.textContent = "Daneel Giskard";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+
+  const message = document.createElement("div");
+  message.textContent = "Narito na ang larawan mo. 😊";
+
+  const result = document.createElement("div");
+  result.className = "image-result";
+
+  const img = document.createElement("img");
+  img.src = imageData;
+  img.alt = "Larawang ginawa ni Daneel";
+
+  const downloadBtn = document.createElement("a");
+  downloadBtn.className = "image-download-btn";
+  downloadBtn.href = imageData;
+  downloadBtn.download = filename;
+  downloadBtn.textContent = "⬇ I-download ang larawan";
+
+  result.append(img, downloadBtn);
+  bubble.append(message, result);
+  wrapper.append(sender, bubble);
+
+  chat.appendChild(wrapper);
+  chat.scrollTop = chat.scrollHeight;
+
+  // Subukang awtomatikong i-download ang larawan.
+  const autoDownload = document.createElement("a");
+  autoDownload.href = imageData;
+  autoDownload.download = filename;
+  document.body.appendChild(autoDownload);
+  autoDownload.click();
+  autoDownload.remove();
+}
+
+async function generateImage() {
+  const prompt = $("imagePrompt")?.value.trim();
+  const button = $("generateImageBtn");
+
+  if (!prompt) {
+    alert("Ilarawan muna ang larawang gusto mong gawin.");
+    return;
+  }
+
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  if (busy) {
+    alert("May kasalukuyang ginagawa si Daneel. Pakihintay muna.");
+    return;
+  }
+
+  busy = true;
+  button.disabled = true;
+  button.textContent = "Gumagawa ng larawan...";
+
+  status.textContent = "● Gumagawa ng larawan si Daneel...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(
+      `${IMAGE_API_URL}/generate-image`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ prompt })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi nagawa ang larawan.");
+    }
+
+    if (!data.success || !data.image) {
+      throw new Error("Walang valid na image data mula sa server.");
+    }
+
+    showImageResult(
+      data.image,
+      "daneel-generated-image.png"
+    );
+
+    closeFeaturePanel();
+    status.textContent = "● Handa nang gumawa ulit si Daneel";
+
+  } catch (error) {
+    console.error("Image generation error:", error);
+    alert("Hindi nagawa ang larawan:\n" + error.message);
+    status.textContent = "● Nagkaroon ng problema sa paggawa ng larawan";
+
+  } finally {
+    busy = false;
+    if ($("generateImageBtn")) {
+      $("generateImageBtn").disabled = false;
+    }
+  }
+}
+
+async function editImage() {
+  const fileInput = $("editImageFile");
+  const prompt = $("editImagePrompt")?.value.trim();
+  const button = $("editImageBtn");
+
+  const file = fileInput?.files?.[0];
+
+  if (!file) {
+    alert("Pumili muna ng larawang ie-edit.");
+    return;
+  }
+
+  if (!prompt) {
+    alert("Ilarawan muna ang pagbabagong gusto mo.");
+    return;
+  }
+
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  if (busy) {
+    alert("May kasalukuyang ginagawa si Daneel. Pakihintay muna.");
+    return;
+  }
+
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp"
+  ];
+
+  if (!allowedTypes.includes(file.type)) {
+    alert("JPEG, PNG, o WebP lamang ang puwedeng i-edit.");
+    return;
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    alert("Hanggang 10 MB lamang ang image file.");
+    return;
+  }
+
+  busy = true;
+  button.disabled = true;
+  button.textContent = "Ini-edit ang larawan...";
+
+  status.textContent = "● Ini-edit ni Daneel ang larawan...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("prompt", prompt);
+
+    const response = await fetch(
+      `${IMAGE_API_URL}/edit-image`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: formData
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi na-edit ang larawan.");
+    }
+
+    if (!data.success || !data.image) {
+      throw new Error("Walang valid na edited image data mula sa server.");
+    }
+
+    showImageResult(
+      data.image,
+      "daneel-edited-image.png"
+    );
+
+    closeFeaturePanel();
+    status.textContent = "● Handa nang mag-edit ulit si Daneel";
+
+  } catch (error) {
+    console.error("Image editing error:", error);
+    alert("Hindi na-edit ang larawan:\n" + error.message);
+    status.textContent = "● Nagkaroon ng problema sa pag-edit ng larawan";
+
+  } finally {
+    busy = false;
+    if ($("editImageBtn")) {
+      $("editImageBtn").disabled = false;
+    }
   }
 }
 
