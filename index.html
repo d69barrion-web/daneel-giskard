@@ -1783,21 +1783,32 @@ function renderCodeContent(container, text) {
     const pre = document.createElement("pre");
     const codeElement = document.createElement("code");
 
-    if (window.hljs && hljs.getLanguage(language)) {
-      codeElement.className = "language-" + language;
-    }
+    const languageAliases = {
+  js: "javascript",
+  html: "xml",
+  htm: "xml",
+  svg: "xml",
+  xml: "xml",
+  ts: "typescript",
+  py: "python",
+  yml: "yaml",
+  sh: "bash"
+};
+
+const highlightLanguage =
+  languageAliases[language] || language;
+
+if (window.hljs && hljs.getLanguage(highlightLanguage)) {
+  codeElement.className = "language-" + highlightLanguage;
+}
 
     codeElement.textContent = code;
     pre.appendChild(codeElement);
 
     // Syntax highlighting
     if (window.hljs) {
-      if (hljs.getLanguage(language)) {
-        hljs.highlightElement(codeElement);
-      } else {
-        hljs.highlightElement(codeElement);
-      }
-    }
+  hljs.highlightElement(codeElement);
+}
 
     // Copy code
     copyBtn.onclick = async () => {
