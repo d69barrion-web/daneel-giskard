@@ -1,7 +1,7 @@
 
 import express from "express";
 import cors from "cors";
-import OpenAI from "openai";
+import OpenAI, { toFile } from "openai";
 import admin from "firebase-admin";
 import multer from "multer";
 
@@ -203,6 +203,81 @@ app.post("/generate-image", requireAuth, async (req, res) => {
     });
   }
 });
+
+/* =========================================
+   DANEEL IMAGE EDITING
+========================================= */
+
+app.post(
+  "/edit-image",
+  requireAuth,
+  (req, res) => {
+    upload.single("image")(req, res, async (uploadError) => {
+      try {
+        if (uploadError) {
+          return res.status(400).json({
+            error: uploadError.message
+          });
+        }
+
+        if (!req.file) {
+          return res.status(400).json({
+            error: "Pumili muna ng larawang ie-edit."
+          });
+        }
+
+        const prompt = req.body?.prompt;
+
+        if (
+          typeof prompt !== "string" ||
+          !prompt.trim() ||
+          prompt.trim().length > 4000
+        ) {
+          return res.status(400).json({
+            error: "Magbigay ng editing instruction na hanggang 4,000 characters."
+          });
+        }
+
+        const imageFile = await toFile(
+          req.file.buffer,
+          req.file.originalname || "uploaded-image",
+          {
+            type: req.file.mimetype
+          }
+        );
+
+        const result = await client.images.edit({
+          model: "gpt-image-1.5",
+          image: imageFile,
+          prompt: prompt.trim(),
+          size: "1024x1024",
+          quality: "medium",
+          output_format: "png",
+          n: 1
+        });
+
+        const imageBase64 = result.data?.[0]?.b64_json;
+
+        if (!imageBase64) {
+          throw new Error("Walang edited image data na ibinalik ng API.");
+        }
+
+        return res.json({
+          success: true,
+          image: `data:image/png;base64,${imageBase64}`,
+          format: "png"
+        });
+
+      } catch (error) {
+        console.error("Image editing error:", error.message);
+
+        return res.status(500).json({
+          error: "Hindi na-edit ang larawan sa ngayon. Pakisubukan ulit."
+        });
+      }
+    });
+  }
+);
 
 /* =========================================
    DANEEL USER PROFILE
