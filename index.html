@@ -715,6 +715,36 @@ header {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+  /* Pigilan ang code block na palaparin ang conversation */
+.code-block {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Toolbar stays within the code block */
+.code-toolbar {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Horizontal scrolling happens only inside the code */
+.code-block pre {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* Keep long code lines from stretching the page */
+.code-block code {
+  white-space: pre;
+}
 
 </style>
 </head>
