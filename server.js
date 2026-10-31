@@ -3,8 +3,29 @@ import express from "express";
 import cors from "cors";
 import OpenAI from "openai";
 import admin from "firebase-admin";
+import multer from "multer";
 
 const app = express();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp"
+    ];
+
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("JPEG, PNG, o WebP images lamang ang pinapayagan."));
+    }
+  }
+});
 
 app.use(cors({
   origin: "https://d69barrion-web.github.io",
@@ -135,6 +156,53 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+/* =========================================
+   DANEEL IMAGE GENERATION
+========================================= */
+
+app.post("/generate-image", requireAuth, async (req, res) => {
+  try {
+    const prompt = req.body?.prompt;
+
+    if (
+      typeof prompt !== "string" ||
+      !prompt.trim() ||
+      prompt.trim().length > 4000
+    ) {
+      return res.status(400).json({
+        error: "Magbigay ng image description na hanggang 4,000 characters."
+      });
+    }
+
+    const result = await client.images.generate({
+      model: "gpt-image-1.5",
+      prompt: prompt.trim(),
+      size: "1024x1024",
+      quality: "medium",
+      output_format: "png",
+      n: 1
+    });
+
+    const imageBase64 = result.data?.[0]?.b64_json;
+
+    if (!imageBase64) {
+      throw new Error("Walang image data na ibinalik ng API.");
+    }
+
+    return res.json({
+      success: true,
+      image: `data:image/png;base64,${imageBase64}`,
+      format: "png"
+    });
+
+  } catch (error) {
+    console.error("Image generation error:", error.message);
+
+    return res.status(500).json({
+      error: "Hindi nakagawa ng larawan sa ngayon. Pakisubukan ulit."
+    });
+  }
+});
 
 /* =========================================
    DANEEL USER PROFILE
