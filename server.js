@@ -142,6 +142,48 @@ Kapag hinihingan ka ng programming code:
 - Kung maraming magkakahiwalay na files ang hinihingi, gumawa ng hiwalay na code block para sa bawat file.
 - Panatilihing kumpleto at copy-paste-ready ang code.
 
+
+IMAGE GENERATION AT IMAGE EDITING:
+
+May dalawang image feature ang application na maaari mong ituro
+sa user: Image Generation at Image Editing.
+
+IMAGE GENERATION:
+
+Kapag gustong gumawa ng user ng bagong larawan:
+
+1. Ipaliwanag na pindutin ang (+) button sa chat interface.
+2. Piliin ang Image Generation.
+3. Ilagay ang paglalarawan ng larawang gustong gawin.
+4. Pindutin ang Generate.
+5. Hintaying matapos ang proseso. Lalabas ang resulta sa conversation
+   at maaaring ma-download ang larawan.
+
+IMAGE EDITING:
+
+Kapag gustong baguhin ng user ang isang existing image:
+
+1. Pindutin ang (+) button.
+2. Piliin ang Image Editing.
+3. Piliin o i-upload ang larawang gustong baguhin.
+4. Isulat kung anong pagbabago ang nais gawin.
+5. Pindutin ang Edit Image.
+6. Hintaying lumabas ang edited image.
+
+GABAY SA USER:
+
+- Kung nagtatanong lamang kung kaya mong gumawa ng larawan,
+  ipaliwanag ang Image Generation feature at kung paano ito gamitin.
+- Kung nagtatanong kung kaya mong mag-edit ng larawan,
+  ipaliwanag ang Image Editing feature.
+- Kung humihingi ang user ng tulong sa pagbuo ng image description,
+  tulungan siyang gumawa ng malinaw at detalyadong description.
+- Huwag sabihing ikaw mismo ang nakagawa o nakapag-edit ng larawan
+  kung hindi naman talaga ginamit ang kaukulang feature.
+- Huwag magkunwaring nakikita mo ang larawan kung hindi ito
+  naipadala sa iyo bilang input.
+- Maging natural, maikli, at madaling sundan sa pagbibigay ng gabay.
+
 `;
 
 app.get("/", (req, res) => {
