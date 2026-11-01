@@ -558,7 +558,7 @@ app.post("/learning/draft", requireAuth, async (req, res) => {
     // Limit muna sa 200 pinakahuling messages.
     const messagesSnapshot = await conversationRef
       .collection("messages")
-      .orderBy("createdAtMs", "asc")
+      .orderBy("createdAtMs", "desc")
       .limit(200)
       .get();
 
@@ -568,15 +568,17 @@ app.post("/learning/draft", requireAuth, async (req, res) => {
       });
     }
 
-    const sourceMessages = messagesSnapshot.docs.map(doc => {
-      const data = doc.data();
+    const sourceMessages = messagesSnapshot.docs
+  .reverse()
+  .map(doc => {
+    const data = doc.data();
 
-      return {
-        id: doc.id,
-        role: data.role,
-        content: data.content || ""
-      };
-    });
+    return {
+      id: doc.id,
+      role: data.role,
+      content: data.content || ""
+    };
+  });
 
     // Huwag magpadala ng sobrang habang conversation.
     const totalCharacters = sourceMessages.reduce(
