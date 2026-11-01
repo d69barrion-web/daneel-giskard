@@ -1053,7 +1053,7 @@ app.post("/chat", requireAuth, async (req, res) => {
       });
     }
 
-    if (userMessage.length > 10000) {
+    if (userMessage.length > 100000) {
       return res.status(400).json({
         error: "Message is too long."
       });
