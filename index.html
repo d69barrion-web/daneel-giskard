@@ -977,6 +977,85 @@ header {
     padding:14px;
   }
 }
+    /* Restore styling for + New Chat */
+.new-btn {
+  width: 100%;
+  border: 1px solid #3b82f670;
+  border-radius: 12px;
+  background: #1d4ed825;
+  color: var(--text);
+  padding: 13px;
+  text-align: left;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Restore styling for the + button beside composer */
+.plus-btn {
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel2);
+  color: white;
+  font-size: 27px;
+  display: grid;
+  place-items: center;
+}
+
+.plus-btn:hover,
+.plus-btn[aria-expanded="true"] {
+  background: #263d5c;
+  border-color: var(--blue);
+}
+
+/* Restore feature menu placement */
+.composer-tools {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.feature-menu {
+  position: absolute;
+  bottom: 58px;
+  left: 0;
+  z-index: 500;
+  width: 245px;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 10px 30px rgba(0,0,0,.45);
+}
+
+/* Link styling in replies */
+.markdown-content a {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: #d1d5db;
+  color: #000000;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  border: 1px solid #9ca3af;
+  line-height: 1.2;
+}
+
+.markdown-content a:hover {
+  background: #bfc5cc;
+  color: #000000;
+}
+
+.markdown-content a:visited {
+  color: #000000;
+}
+
+/* Make the link border/box a bit shorter */
+.markdown-content a {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
    
 </style>
 </head>
