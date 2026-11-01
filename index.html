@@ -1455,6 +1455,129 @@ async function loadConversationMessages(conversationId) {
   }
 }
 
+async function generateLearningDraft() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  if (!activeConversationId) {
+    alert("Walang napiling conversation.");
+    return;
+  }
+
+  try {
+    status.textContent = "● Sinusuri ang conversation para sa Learning Draft...";
+
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(`${baseURL}/learning/draft`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify({
+        conversationId: activeConversationId
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi makabuo ng Learning Draft.");
+    }
+
+    // Gumawa ng result panel.
+    let panel = document.getElementById("learningDraftPanel");
+
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = "learningDraftPanel";
+
+      Object.assign(panel.style, {
+        position: "fixed",
+        inset: "5%",
+        zIndex: "99999",
+        background: "#172033",
+        color: "#ffffff",
+        padding: "20px",
+        borderRadius: "14px",
+        overflowY: "auto",
+        boxShadow: "0 5px 30px rgba(0,0,0,0.5)"
+      });
+
+      document.body.appendChild(panel);
+    }
+
+    panel.replaceChildren();
+
+    const heading = document.createElement("h3");
+    heading.textContent = "Daneel Learning Drafts";
+    panel.appendChild(heading);
+
+    const closeButton = document.createElement("button");
+    closeButton.textContent = "Close";
+    closeButton.style.marginBottom = "15px";
+    closeButton.onclick = () => panel.remove();
+    panel.appendChild(closeButton);
+
+    const summary = document.createElement("p");
+    summary.textContent =
+      `Conversation: ${data.conversationTitle}\n` +
+      `Drafts found: ${data.drafts.length}`;
+
+    panel.appendChild(summary);
+
+    if (data.drafts.length === 0) {
+      const empty = document.createElement("p");
+      empty.textContent =
+        "Walang nakitang learning reference na sapat ang batayan.";
+      panel.appendChild(empty);
+    }
+
+    data.drafts.forEach((draft, index) => {
+      const section = document.createElement("section");
+
+      section.style.marginTop = "18px";
+      section.style.padding = "12px";
+      section.style.background = "#26344d";
+      section.style.borderRadius = "10px";
+
+      const title = document.createElement("h4");
+      title.textContent = `${index + 1}. ${draft.title}`;
+      section.appendChild(title);
+
+      const type = document.createElement("p");
+      type.textContent =
+        draft.type === "general_lesson"
+          ? "General Lesson and Principle"
+          : "Specific Knowledge and Context";
+      section.appendChild(type);
+
+      const content = document.createElement("p");
+      content.textContent = draft.content;
+      section.appendChild(content);
+
+      const sources = document.createElement("p");
+      sources.textContent =
+        `Source messages: ${draft.sourceExcerpts.length}`;
+      section.appendChild(sources);
+
+      panel.appendChild(section);
+    });
+
+    status.textContent = "● Learning Draft generated.";
+
+  } catch (error) {
+    console.error("Learning draft error:", error);
+    status.textContent = "● Learning Draft failed";
+    alert(error.message);
+  }
+}
+
 async function loadConversationHistory() {
   if (!currentUser) return;
 
