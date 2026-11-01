@@ -33,7 +33,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-app.use(express.json({ limit: "20kb" }));
+app.use(express.json({ limit: "2mb" }));
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
