@@ -1223,7 +1223,23 @@ header {
             Naka-save sa browser ang mga mensahe mo.
           </p>
         </div>
+        
+        <div class="memory-card">
+  <h3>📖 Daneel Learning Library</h3>
 
+  <p>
+    Suriin ang isang napiling pag-uusap at tukuyin
+    ang mga aral at impormasyong maaaring mapanatili
+    bilang learning references.
+  </p>
+
+  <button class="primary-btn" id="createLearningDraftBtn">
+    📚 Create Learning Draft
+  </button>
+
+  <p id="learningDraftStatus" aria-live="polite"></p>
+</div>
+        
         <div class="memory-card">
           <h3>🔎 Mga obserbasyon ni Daneel</h3>
           <p>
@@ -1578,6 +1594,11 @@ async function generateLearningDraft() {
   }
 }
 
+  $("createLearningDraftBtn").addEventListener(
+  "click",
+  generateLearningDraft
+);
+  
 async function loadConversationHistory() {
   if (!currentUser) return;
 
