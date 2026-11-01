@@ -1471,6 +1471,59 @@ async function loadConversationMessages(conversationId) {
   }
 }
 
+  async function reviewLearningDraft(index, action, section) {
+  if (!currentUser || !activeConversationId) {
+    alert("Mag-sign in at pumili muna ng conversation.");
+    return;
+  }
+
+  const buttons = section.querySelectorAll("button");
+  buttons.forEach(button => button.disabled = true);
+
+  try {
+    const idToken = await currentUser.getIdToken();
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/learning/draft/${encodeURIComponent(activeConversationId)}/${index}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ action })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi na-update ang Learning Draft.");
+    }
+
+    const result = document.createElement("p");
+    result.textContent =
+      action === "approve"
+        ? "✓ Approved — na-save na sa Learning Library."
+        : "✕ Rejected — hindi ito isinama sa Learning Library.";
+
+    section.appendChild(result);
+
+    buttons.forEach(button => button.remove());
+
+    status.textContent =
+      action === "approve"
+        ? "● Learning reference approved."
+        : "● Learning draft rejected.";
+
+  } catch (error) {
+    console.error("Learning review error:", error);
+    buttons.forEach(button => button.disabled = false);
+    alert(error.message);
+  }
+}
+  
 async function generateLearningDraft() {
   if (!currentUser) {
     alert("Mag-sign in muna sa Google.");
@@ -1555,35 +1608,61 @@ async function generateLearningDraft() {
     }
 
     data.drafts.forEach((draft, index) => {
-      const section = document.createElement("section");
+  const section = document.createElement("section");
 
-      section.style.marginTop = "18px";
-      section.style.padding = "12px";
-      section.style.background = "#26344d";
-      section.style.borderRadius = "10px";
+  section.style.marginTop = "18px";
+  section.style.padding = "12px";
+  section.style.background = "#26344d";
+  section.style.borderRadius = "10px";
 
-      const title = document.createElement("h4");
-      title.textContent = `${index + 1}. ${draft.title}`;
-      section.appendChild(title);
+  const title = document.createElement("h4");
+  title.textContent = `${index + 1}. ${draft.title}`;
+  section.appendChild(title);
 
-      const type = document.createElement("p");
-      type.textContent =
-        draft.type === "general_lesson"
-          ? "General Lesson and Principle"
-          : "Specific Knowledge and Context";
-      section.appendChild(type);
+  const type = document.createElement("p");
+  type.textContent =
+    draft.type === "general_lesson"
+      ? "General Lesson and Principle"
+      : "Specific Knowledge and Context";
+  section.appendChild(type);
 
-      const content = document.createElement("p");
-      content.textContent = draft.content;
-      section.appendChild(content);
+  const content = document.createElement("p");
+  content.textContent = draft.content;
+  section.appendChild(content);
 
-      const sources = document.createElement("p");
-      sources.textContent =
-        `Source messages: ${draft.sourceExcerpts.length}`;
-      section.appendChild(sources);
+  const sources = document.createElement("p");
+  sources.textContent =
+    `Source messages: ${(draft.sourceExcerpts || []).length}`;
+  section.appendChild(sources);
 
-      panel.appendChild(section);
-    });
+  if (draft.status === "approved") {
+    const reviewed = document.createElement("p");
+    reviewed.textContent = "✓ Approved";
+    section.appendChild(reviewed);
+
+  } else if (draft.status === "rejected") {
+    const reviewed = document.createElement("p");
+    reviewed.textContent = "✕ Rejected";
+    section.appendChild(reviewed);
+
+  } else {
+    const approveButton = document.createElement("button");
+    approveButton.textContent = "✓ Approve";
+    approveButton.style.marginRight = "8px";
+    approveButton.onclick = () =>
+      reviewLearningDraft(index, "approve", section);
+
+    const rejectButton = document.createElement("button");
+    rejectButton.textContent = "✕ Reject";
+    rejectButton.onclick = () =>
+      reviewLearningDraft(index, "reject", section);
+
+    section.appendChild(approveButton);
+    section.appendChild(rejectButton);
+  }
+
+  panel.appendChild(section);
+});
 
     status.textContent = "● Learning Draft generated.";
 
