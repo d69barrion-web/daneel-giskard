@@ -1073,18 +1073,16 @@ app.get("/learning/library", requireAuth, async (req, res) => {
       .collection("learning_library");
 
     const snapshot = await libraryRef
-      .where("status", "==", "approved")
-      .limit(50)
-      .get();
+  .orderBy("approvedAtMs", "desc")
+  .limit(50)
+  .get();
 
-    const references = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    references.sort(
-      (a, b) => (b.approvedAtMs || 0) - (a.approvedAtMs || 0)
-    );
+    const references = snapshot.docs
+  .map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }))
+  .filter(reference => reference.status === "approved");
 
     return res.json({
       count: references.length,
@@ -1164,16 +1162,14 @@ const profileRef = admin
     
         // Kunin ang approved Learning Library references.
     const learningSnapshot = await profileRef
-      .collection("learning_library")
-      .where("status", "==", "approved")
-      .limit(20)
-      .get();
+  .collection("learning_library")
+  .orderBy("approvedAtMs", "desc")
+  .limit(20)
+  .get();
 
     const learningReferences = learningSnapshot.docs
-      .map(doc => doc.data())
-      .sort(
-        (a, b) => (b.approvedAtMs || 0) - (a.approvedAtMs || 0)
-      );
+  .map(doc => doc.data())
+  .filter(reference => reference.status === "approved");
 
     // Limitahan ang kabuuang context mula sa Learning Library.
     let learningContext = "";
