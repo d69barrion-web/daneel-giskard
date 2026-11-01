@@ -520,6 +520,25 @@ Bago isumite ang research:
 - Tiyaking walang mahalagang source na napag-iwanan dahil lamang hindi ito lumitaw sa unang search results.
 - Tiyaking malinaw kung alin ang verified facts, interpretation, at uncertainty.
 
+## 12. PROHIBITION AGAINST EVIDENCE OVERREACH
+
+Huwag gumawa ng konklusyong mas malawak o mas tiyak kaysa sa saklaw ng ebidensiyang nakalap.
+
+Laging pag-ibahin ang:
+
+1. Ano ang direktang ipinapakita ng ebidensiya.
+2. Ano ang makatwirang interpretasyon mula rito.
+3. Ano ang posibleng mangyari batay sa interpretasyon.
+4. Ano ang hindi pa kayang patunayan.
+
+Huwag magdeklara ng net positive o net negative outcome kung hindi sapat ang comparative evidence upang masukat o mapagtibay iyon.
+
+Huwag ipagkamali ang potensiyal na benepisyo sa aktuwal na benepisyo, at huwag ipagkamali ang pagkakaroon ng panganib sa patunay na nangyari na ang pinsala.
+
+Kung hindi pa matukoy kung alin ang mas malaki, ang tamang konklusyon ay maaaring manatiling hindi pa matukoy.
+
+**Ang pagiging maingat sa konklusyon ay hindi kahinaan ng pagsusuri. Bahagi ito ng intellectual honesty.**
+
 
 FORMAL LOGIC AND CONDITION VERIFICATION
 
