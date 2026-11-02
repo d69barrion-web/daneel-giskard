@@ -2252,7 +2252,115 @@ codeIndexButton.addEventListener("click", async () => {
   }
 });
 
+// CODE RETRIEVAL SEARCH HANDLER
 
+async function searchDaneelCode() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  const query = codeSearchInput.value.trim();
+
+  if (query.length < 2) {
+    alert("Maglagay ng keyword na hindi bababa sa 2 characters.");
+    return;
+  }
+
+  codeSearchButton.disabled = true;
+  codeSearchButton.textContent = "Searching...";
+
+  explorerInfo.textContent =
+    `Hinahanap ang "${query}" sa source files...`;
+
+  explorerOutput.textContent = "Searching source code...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/code-search?q=${encodeURIComponent(query)}&limit=10`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    if (!Array.isArray(data.results)) {
+      throw new Error("Invalid Code Retrieval response.");
+    }
+
+    explorerInfo.textContent =
+      `Search: "${data.query}" | ` +
+      `Results: ${data.totalResults} | ` +
+      `Limit: ${data.limit}`;
+
+    if (data.results.length === 0) {
+      explorerOutput.textContent =
+        "Walang matching source code na nakita.";
+      return;
+    }
+
+    const output = data.results.map((result, index) => {
+      const code = result.excerpt.map(item => {
+        const marker =
+          item.line === result.matchedLine ? " >>> " : "     ";
+
+        return (
+          marker +
+          String(item.line).padStart(5, " ") +
+          " | " +
+          item.code
+        );
+      }).join("\n");
+
+      return (
+        `RESULT ${index + 1}\n` +
+        `FILE: ${result.filename}\n` +
+        `MATCHED LINE: ${result.matchedLine}\n` +
+        `MATCH: ${result.matchedText}\n\n` +
+        code
+      );
+    }).join("\n\n" + "=".repeat(35) + "\n\n");
+
+    explorerOutput.textContent =
+      `CODE RETRIEVAL RESULTS\n` +
+      `==============================\n\n` +
+      output;
+
+  } catch (error) {
+    explorerInfo.textContent = "Code Retrieval failed.";
+
+    explorerOutput.textContent =
+      "ERROR:\n\n" + error.message;
+
+  } finally {
+    codeSearchButton.disabled = false;
+    codeSearchButton.textContent = "🔍 Search";
+  }
+}
+
+// SEARCH BUTTON
+codeSearchButton.addEventListener(
+  "click",
+  searchDaneelCode
+);
+
+// ENTER KEY
+codeSearchInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    searchDaneelCode();
+  }
+});
 
 const profileEditor = $("profileEditor");
 const preferredNameInput = $("preferredNameInput");
