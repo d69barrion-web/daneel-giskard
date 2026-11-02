@@ -2804,59 +2804,83 @@ function findFunctionRelationships(source, functionName) {
     if (closeParen === -1) continue;
 
     const maskedCall = masked.slice(
-      routeMatch.index,
-      closeParen + 1
+      openParen + 1,
+      closeParen
     );
 
     const originalCall = source.slice(
-      routeMatch.index,
-      closeParen + 1
+      openParen + 1,
+      closeParen
     );
 
-    // Hanapin ang pangalan sa aktuwal na code,
-    // hindi sa comments o strings.
+    // Hanapin ang target sa code, hindi sa comments o strings.
     targetPattern.lastIndex = 0;
 
     let targetMatch;
-    const occurrences = [];
 
     while (
       (targetMatch = targetPattern.exec(maskedCall)) !== null
     ) {
-      occurrences.push({
-        position: routeMatch.index + targetMatch.index
-      });
-    }
+      const absolutePosition =
+        openParen + 1 + targetMatch.index;
 
-    if (occurrences.length === 0) continue;
+      // Bilangin ang argument position batay sa commas
+      // na wala sa nested parentheses, brackets o braces.
+      let depthParen = 0;
+      let depthBracket = 0;
+      let depthBrace = 0;
+      let argumentPosition = 0;
 
-    const routePathMatch = originalCall.match(
-      /^\s*app\.(?:get|post|put|patch|delete|use)\s*\(\s*(['"])(.*?)\1/
-    );
+      for (let i = 0; i < targetMatch.index; i++) {
+        const ch = maskedCall[i];
 
-    const method = routeMatch[1].toUpperCase();
+        if (ch === "(") depthParen++;
+        else if (ch === ")") depthParen--;
+        else if (ch === "[") depthBracket++;
+        else if (ch === "]") depthBracket--;
+        else if (ch === "{") depthBrace++;
+        else if (ch === "}") depthBrace--;
+        else if (
+          ch === "," &&
+          depthParen === 0 &&
+          depthBracket === 0 &&
+          depthBrace === 0
+        ) {
+          argumentPosition++;
+        }
+      }
 
-    const routePath = routePathMatch
-      ? routePathMatch[2]
-      : "(route path not identified)";
+      // Argument 0 = route path.
+      // Argument 1 onward = middleware/handler candidates.
+      const role =
+        argumentPosition === 0
+          ? "route-path-candidate"
+          : "middleware-or-handler-candidate";
 
-    for (const occurrence of occurrences) {
+      const routePathMatch = originalCall.match(
+        /^\s*(['"])(.*?)\1/
+      );
+
+      const routePath = routePathMatch
+        ? routePathMatch[2]
+        : "(route path not identified)";
+
       relationships.push({
         functionName,
         relationshipType: "express-route-argument-reference",
-        role: "route-middleware-or-handler-candidate",
-        method,
+        role,
+        argumentPosition,
+        method: routeMatch[1].toUpperCase(),
         routePath,
         filename: "server.js",
         line: getFunctionLineNumber(
           source,
-          occurrence.position
+          absolutePosition
         ),
-        matchedCode: source
-          .slice(
-            occurrence.position,
-            occurrence.position + functionName.length
-          )
+        matchedCode: source.slice(
+          absolutePosition,
+          absolutePosition + functionName.length
+        )
       });
     }
 
