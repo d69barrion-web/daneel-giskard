@@ -2027,7 +2027,9 @@ sourceTestButton.addEventListener("click", async () => {
   }
 });
   
-// TEMPORARY CODE INDEXER TEST
+
+// TEMPORARY CODE INDEXER TEST + EXPLORER
+
 const codeIndexButton = document.createElement("button");
 
 codeIndexButton.type = "button";
@@ -2036,6 +2038,123 @@ codeIndexButton.textContent = "🧭 Test Daneel Code Indexer";
 
 $("memoryView").appendChild(codeIndexButton);
 
+// CODE EXPLORER PANEL
+const codeExplorer = document.createElement("div");
+
+codeExplorer.style.cssText = `
+  display:none;
+  margin-top:15px;
+  padding:15px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--panel2);
+`;
+
+const explorerTitle = document.createElement("h3");
+explorerTitle.textContent = "🧭 Daneel Code Explorer";
+
+const explorerInfo = document.createElement("p");
+explorerInfo.textContent = "Hindi pa nakakakuha ng Code Index.";
+
+explorerInfo.style.cssText = `
+  font-size:13px;
+  opacity:.75;
+`;
+
+const categorySelect = document.createElement("select");
+
+categorySelect.style.cssText = `
+  width:100%;
+  padding:11px;
+  margin:8px 0 12px;
+  border-radius:8px;
+  font-size:14px;
+`;
+
+const categories = [
+  ["summary", "📊 Summary"],
+  ["files", "📁 Files"],
+  ["imports", "📦 Imports"],
+  ["functions", "⚙️ Functions"],
+  ["routes", "🌐 API Routes"],
+  ["elementIds", "🆔 HTML IDs"],
+  ["eventListeners", "👂 Event Listeners"],
+  ["eventProperties", "🔧 Event Properties"],
+  ["inlineHandlers", "🖱️ Inline Handlers"],
+  ["dependencies", "🧩 Dependencies"]
+];
+
+categories.forEach(([value, label]) => {
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = label;
+  categorySelect.appendChild(option);
+});
+
+const explorerOutput = document.createElement("pre");
+
+explorerOutput.style.cssText = `
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  overflow-x:auto;
+  max-height:400px;
+  overflow-y:auto;
+  padding:12px;
+  border-radius:8px;
+  background:var(--panel);
+  font-size:12px;
+  line-height:1.6;
+  margin:0;
+`;
+
+codeExplorer.appendChild(explorerTitle);
+codeExplorer.appendChild(explorerInfo);
+codeExplorer.appendChild(categorySelect);
+codeExplorer.appendChild(explorerOutput);
+
+$("memoryView").appendChild(codeExplorer);
+
+// ITAGO ANG KASALUKUYANG INDEX
+let currentCodeIndex = null;
+
+// IPRESENTA ANG NAPILING CATEGORY
+function displayCodeCategory(category) {
+  if (!currentCodeIndex) return;
+
+  if (category === "summary") {
+    explorerOutput.textContent =
+      "DANEEL CODE INDEX SUMMARY\n\n" +
+      `Version: ${currentCodeIndex.version}\n` +
+      `Method: ${currentCodeIndex.method}\n` +
+      `Read only: ${currentCodeIndex.readOnly}\n\n` +
+      JSON.stringify(currentCodeIndex.summary, null, 2);
+
+    return;
+  }
+
+  const entries = currentCodeIndex[category];
+
+  if (!Array.isArray(entries)) {
+    explorerOutput.textContent = "Walang available na data.";
+    return;
+  }
+
+  explorerOutput.textContent =
+    `CATEGORY: ${category}\n` +
+    `TOTAL ENTRIES: ${entries.length}\n\n` +
+    (
+      entries.length
+        ? JSON.stringify(entries, null, 2)
+        : "Walang nakitang entries sa category na ito."
+    );
+}
+
+// CATEGORY SELECTOR
+categorySelect.addEventListener("change", () => {
+  displayCodeCategory(categorySelect.value);
+});
+
+// KUNIN ANG CODE INDEX
 codeIndexButton.addEventListener("click", async () => {
   if (!currentUser) {
     alert("Mag-sign in muna sa Google.");
@@ -2044,6 +2163,10 @@ codeIndexButton.addEventListener("click", async () => {
 
   codeIndexButton.disabled = true;
   codeIndexButton.textContent = "Ini-index ang code...";
+
+  codeExplorer.style.display = "block";
+  explorerInfo.textContent = "Kumukuha ng Code Index mula sa backend...";
+  explorerOutput.textContent = "Please wait...";
 
   try {
     const idToken = await currentUser.getIdToken();
@@ -2069,56 +2192,29 @@ codeIndexButton.addEventListener("click", async () => {
       throw new Error("Hindi kumpleto ang Code Index response.");
     }
 
-    const index = data.index;
-    const summary = index.summary;
+    currentCodeIndex = data.index;
 
-    const routeSamples = index.routes
-      .slice(0, 8)
-      .map(route =>
-        `${route.method} ${route.path} (Line ${route.line})`
-      )
-      .join("\n");
+    explorerInfo.textContent =
+      "Matagumpay na na-index ang " +
+      currentCodeIndex.summary.files +
+      " source files. Piliin ang category na nais siyasatin.";
 
-    const functionSamples = index.functions
-      .slice(0, 8)
-      .map(fn =>
-        `${fn.name} — ${fn.file} (Line ${fn.line})`
-      )
-      .join("\n");
+    categorySelect.value = "summary";
 
-    alert(
-      "DANEEL CODE INDEXER SUCCESS!\n\n" +
-
-      "INDEX SUMMARY\n" +
-      `Files: ${summary.files}\n` +
-      `Imports: ${summary.imports}\n` +
-      `Functions: ${summary.functions}\n` +
-      `API Routes: ${summary.routes}\n` +
-      `HTML IDs: ${summary.elementIds}\n` +
-      `Event Listeners: ${summary.eventListeners}\n` +
-      `Event Properties: ${summary.eventProperties}\n` +
-      `Inline Handlers: ${summary.inlineHandlers}\n` +
-      `Dependencies: ${summary.dependencies}\n\n` +
-
-      "SAMPLE API ROUTES\n" +
-      (routeSamples || "Walang nahanap na routes.") +
-      "\n\n" +
-
-      "SAMPLE FUNCTIONS\n" +
-      (functionSamples || "Walang nahanap na functions.")
-    );
+    displayCodeCategory("summary");
 
   } catch (error) {
-    alert(
-      "CODE INDEXER TEST FAILED:\n\n" +
-      error.message
-    );
+    explorerInfo.textContent = "May naganap na error.";
+
+    explorerOutput.textContent =
+      "CODE INDEXER ERROR\n\n" + error.message;
 
   } finally {
     codeIndexButton.disabled = false;
     codeIndexButton.textContent = "🧭 Test Daneel Code Indexer";
   }
 });
+
 
 
 const profileEditor = $("profileEditor");
