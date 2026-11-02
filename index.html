@@ -2109,8 +2109,45 @@ explorerOutput.style.cssText = `
 
 codeExplorer.appendChild(explorerTitle);
 codeExplorer.appendChild(explorerInfo);
+
 codeExplorer.appendChild(categorySelect);
+
+// CODE SEARCH CONTROLS
+const codeSearchControls = document.createElement("div");
+
+codeSearchControls.style.cssText = `
+  display:flex;
+  gap:8px;
+  margin-bottom:12px;
+`;
+
+const codeSearchInput = document.createElement("input");
+
+codeSearchInput.type = "search";
+codeSearchInput.placeholder = "Hal. learning, profile, conversation...";
+codeSearchInput.style.cssText = `
+  flex:1;
+  min-width:0;
+  padding:11px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--panel);
+  color:inherit;
+  font-size:14px;
+`;
+
+const codeSearchButton = document.createElement("button");
+
+codeSearchButton.type = "button";
+codeSearchButton.className = "primary-btn";
+codeSearchButton.textContent = "🔍 Search";
+
+codeSearchControls.appendChild(codeSearchInput);
+codeSearchControls.appendChild(codeSearchButton);
+
+codeExplorer.appendChild(codeSearchControls);
 codeExplorer.appendChild(explorerOutput);
+
 
 $("memoryView").appendChild(codeExplorer);
 
