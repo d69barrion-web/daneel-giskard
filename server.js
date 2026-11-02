@@ -2485,6 +2485,286 @@ app.get(
   }
 );
 
+// =========================================
+// DANEEL CODE RETRIEVAL v2 — FUNCTION-AWARE
+// READ ONLY
+// =========================================
+
+// Ginagawang spaces ang comments at strings
+// para hindi mapagkamalang JavaScript code.
+function maskJavaScriptNonCode(source) {
+  const chars = source.split("");
+  let state = "code";
+  let escaped = false;
+
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i];
+    const next = source[i + 1];
+
+    if (state === "code") {
+      if (ch === "'" ) {
+        state = "single";
+        chars[i] = " ";
+      } else if (ch === '"') {
+        state = "double";
+        chars[i] = " ";
+      } else if (ch === "`") {
+        state = "template";
+        chars[i] = " ";
+      } else if (ch === "/" && next === "/") {
+        state = "lineComment";
+        chars[i] = " ";
+        chars[i + 1] = " ";
+        i++;
+      } else if (ch === "/" && next === "*") {
+        state = "blockComment";
+        chars[i] = " ";
+        chars[i + 1] = " ";
+        i++;
+      }
+    } else {
+      if (ch !== "\n" && ch !== "\r") {
+        chars[i] = " ";
+      }
+
+      if (state === "lineComment") {
+        if (ch === "\n" || ch === "\r") {
+          state = "code";
+        }
+      } else if (state === "blockComment") {
+        if (ch === "*" && next === "/") {
+          chars[i + 1] = " ";
+          i++;
+          state = "code";
+        }
+      } else {
+        if (escaped) {
+          escaped = false;
+        } else if (ch === "\\") {
+          escaped = true;
+        } else if (
+          (state === "single" && ch === "'") ||
+          (state === "double" && ch === '"') ||
+          (state === "template" && ch === "`")
+        ) {
+          state = "code";
+        }
+      }
+    }
+  }
+
+  return chars.join("");
+}
+
+
+// Hinahanap ang katumbas na closing parenthesis.
+function findMatchingParenthesis(masked, openPosition) {
+  let depth = 0;
+
+  for (let i = openPosition; i < masked.length; i++) {
+    if (masked[i] === "(") depth++;
+    if (masked[i] === ")") depth--;
+
+    if (depth === 0) return i;
+  }
+
+  return -1;
+}
+
+
+// Hinahanap ang katumbas na closing brace.
+function findMatchingBrace(masked, openPosition) {
+  let depth = 0;
+
+  for (let i = openPosition; i < masked.length; i++) {
+    if (masked[i] === "{") depth++;
+    if (masked[i] === "}") depth--;
+
+    if (depth === 0) return i;
+  }
+
+  return -1;
+}
+
+
+// Kinukuha ang line number mula sa character position.
+function getFunctionLineNumber(source, position) {
+  return source.slice(0, position).split(/\r\n|\n|\r/).length;
+}
+
+
+// Hinahanap ang buong classic function declaration.
+function retrieveNamedFunction(source, functionName) {
+  const masked = maskJavaScriptNonCode(source);
+
+  const escapedName = functionName.replace(
+    /[.*+?^${}()|[\]\\]/g,
+    "\\$&"
+  );
+
+  const declarationPattern = new RegExp(
+    "\\bfunction\\s+" + escapedName + "\\s*\\(",
+    "g"
+  );
+
+  const matches = [];
+  let match;
+
+  while ((match = declarationPattern.exec(masked)) !== null) {
+    const openParen = masked.indexOf("(", match.index);
+    const closeParen = findMatchingParenthesis(
+      masked,
+      openParen
+    );
+
+    if (closeParen === -1) continue;
+
+    const openBrace = masked.indexOf("{", closeParen);
+
+    if (openBrace === -1) continue;
+
+    const closeBrace = findMatchingBrace(
+      masked,
+      openBrace
+    );
+
+    if (closeBrace === -1) continue;
+
+    const startLine = getFunctionLineNumber(
+      source,
+      match.index
+    );
+
+    const endLine = getFunctionLineNumber(
+      source,
+      closeBrace
+    );
+
+    const code = source.slice(
+      match.index,
+      closeBrace + 1
+    );
+
+    matches.push({
+      name: functionName,
+      startLine,
+      endLine,
+      totalLines: endLine - startLine + 1,
+      code
+    });
+  }
+
+  return matches;
+}
+
+
+// Hinahanap ang mga reference sa function name.
+function findFunctionReferences(source, functionName) {
+  const masked = maskJavaScriptNonCode(source);
+  const lines = source.split(/\r\n|\n|\r/);
+  const maskedLines = masked.split(/\r\n|\n|\r/);
+
+  const escapedName = functionName.replace(
+    /[.*+?^${}()|[\]\\]/g,
+    "\\$&"
+  );
+
+  const pattern = new RegExp(
+    "\\b" + escapedName + "\\b"
+  );
+
+  const references = [];
+
+  for (let i = 0; i < maskedLines.length; i++) {
+    if (pattern.test(maskedLines[i])) {
+      references.push({
+        line: i + 1,
+        code: lines[i].trim()
+      });
+    }
+  }
+
+  return references;
+}
+
+// =========================================
+// FUNCTION-AWARE RETRIEVAL ENDPOINT
+// =========================================
+
+app.get(
+  "/admin/code-function",
+  requireAuth,
+  requireSourceAdmin,
+  async (req, res) => {
+    try {
+      const functionName = String(
+        req.query.name || ""
+      ).trim();
+
+      if (
+        !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(functionName)
+      ) {
+        return res.status(400).json({
+          error: "Maglagay ng valid na JavaScript function name."
+        });
+      }
+
+      const functions = [];
+      const references = [];
+
+      for (const filename of Object.keys(SOURCE_FILE_URLS)) {
+        const file = await inspectSourceFile(filename);
+
+        const foundFunctions = retrieveNamedFunction(
+          file.content,
+          functionName
+        );
+
+        const foundReferences = findFunctionReferences(
+          file.content,
+          functionName
+        );
+
+        for (const item of foundFunctions) {
+          functions.push({
+            filename,
+            ...item
+          });
+        }
+
+        for (const item of foundReferences) {
+          references.push({
+            filename,
+            ...item
+          });
+        }
+      }
+
+      return res.json({
+        success: true,
+        readOnly: true,
+        retrievalVersion: "2.0",
+        method: "function-aware-static-scan",
+        functionName,
+        definitionCount: functions.length,
+        referenceCount: references.length,
+        functions,
+        references
+      });
+
+    } catch (error) {
+      console.error(
+        "Function-aware Retrieval error:",
+        error
+      );
+
+      return res.status(500).json({
+        error: "Hindi nagawa ang Function-aware Retrieval."
+      });
+    }
+  }
+);
+
 // Basahin ang mismong laman ng isang source file.
 app.get(
   "/admin/source-files/:filename",
