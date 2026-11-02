@@ -2026,6 +2026,100 @@ sourceTestButton.addEventListener("click", async () => {
     sourceTestButton.textContent = "🔎 Test Daneel Source Reader";
   }
 });
+  
+// TEMPORARY CODE INDEXER TEST
+const codeIndexButton = document.createElement("button");
+
+codeIndexButton.type = "button";
+codeIndexButton.className = "primary-btn";
+codeIndexButton.textContent = "🧭 Test Daneel Code Indexer";
+
+$("memoryView").appendChild(codeIndexButton);
+
+codeIndexButton.addEventListener("click", async () => {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  codeIndexButton.disabled = true;
+  codeIndexButton.textContent = "Ini-index ang code...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/code-index`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    if (!data.index || !data.index.summary) {
+      throw new Error("Hindi kumpleto ang Code Index response.");
+    }
+
+    const index = data.index;
+    const summary = index.summary;
+
+    const routeSamples = index.routes
+      .slice(0, 8)
+      .map(route =>
+        `${route.method} ${route.path} (Line ${route.line})`
+      )
+      .join("\n");
+
+    const functionSamples = index.functions
+      .slice(0, 8)
+      .map(fn =>
+        `${fn.name} — ${fn.file} (Line ${fn.line})`
+      )
+      .join("\n");
+
+    alert(
+      "DANEEL CODE INDEXER SUCCESS!\n\n" +
+
+      "INDEX SUMMARY\n" +
+      `Files: ${summary.files}\n` +
+      `Imports: ${summary.imports}\n` +
+      `Functions: ${summary.functions}\n` +
+      `API Routes: ${summary.routes}\n` +
+      `HTML IDs: ${summary.elementIds}\n` +
+      `Event Listeners: ${summary.eventListeners}\n` +
+      `Event Properties: ${summary.eventProperties}\n` +
+      `Inline Handlers: ${summary.inlineHandlers}\n` +
+      `Dependencies: ${summary.dependencies}\n\n` +
+
+      "SAMPLE API ROUTES\n" +
+      (routeSamples || "Walang nahanap na routes.") +
+      "\n\n" +
+
+      "SAMPLE FUNCTIONS\n" +
+      (functionSamples || "Walang nahanap na functions.")
+    );
+
+  } catch (error) {
+    alert(
+      "CODE INDEXER TEST FAILED:\n\n" +
+      error.message
+    );
+
+  } finally {
+    codeIndexButton.disabled = false;
+    codeIndexButton.textContent = "🧭 Test Daneel Code Indexer";
+  }
+});
+
 
 const profileEditor = $("profileEditor");
 const preferredNameInput = $("preferredNameInput");
