@@ -2764,6 +2764,171 @@ app.get(
   }
 );
 
+ // =========================================
+ // DANEEL CODE RELATIONSHIP MAPPING v3
+ // READ ONLY
+ // =========================================
+
+// Sinusuri ang Express routes at hinahanap
+// kung saan ginagamit ang target function.
+function findFunctionRelationships(source, functionName) {
+  const masked = maskJavaScriptNonCode(source);
+
+  const routePattern =
+    /\bapp\.(get|post|put|patch|delete|use)\s*\(/g;
+
+  const escapedName = functionName.replace(
+    /[.*+?^${}()|[\]\\]/g,
+    "\\$&"
+  );
+
+  const targetPattern = new RegExp(
+    "\\b" + escapedName + "\\b",
+    "g"
+  );
+
+  const relationships = [];
+  let routeMatch;
+
+  while ((routeMatch = routePattern.exec(masked)) !== null) {
+    const openParen = masked.indexOf(
+      "(",
+      routeMatch.index
+    );
+
+    const closeParen = findMatchingParenthesis(
+      masked,
+      openParen
+    );
+
+    if (closeParen === -1) continue;
+
+    const maskedCall = masked.slice(
+      routeMatch.index,
+      closeParen + 1
+    );
+
+    const originalCall = source.slice(
+      routeMatch.index,
+      closeParen + 1
+    );
+
+    // Hanapin ang pangalan sa aktuwal na code,
+    // hindi sa comments o strings.
+    targetPattern.lastIndex = 0;
+
+    let targetMatch;
+    const occurrences = [];
+
+    while (
+      (targetMatch = targetPattern.exec(maskedCall)) !== null
+    ) {
+      occurrences.push({
+        position: routeMatch.index + targetMatch.index
+      });
+    }
+
+    if (occurrences.length === 0) continue;
+
+    const routePathMatch = originalCall.match(
+      /^\s*app\.(?:get|post|put|patch|delete|use)\s*\(\s*(['"])(.*?)\1/
+    );
+
+    const method = routeMatch[1].toUpperCase();
+
+    const routePath = routePathMatch
+      ? routePathMatch[2]
+      : "(route path not identified)";
+
+    for (const occurrence of occurrences) {
+      relationships.push({
+        functionName,
+        relationshipType: "express-route-argument-reference",
+        role: "route-middleware-or-handler-candidate",
+        method,
+        routePath,
+        filename: "server.js",
+        line: getFunctionLineNumber(
+          source,
+          occurrence.position
+        ),
+        matchedCode: source
+          .slice(
+            occurrence.position,
+            occurrence.position + functionName.length
+          )
+      });
+    }
+
+    routePattern.lastIndex = closeParen + 1;
+  }
+
+  return relationships;
+}
+
+// =========================================
+// RELATIONSHIP MAPPING ENDPOINT v3
+// =========================================
+
+app.get(
+  "/admin/code-relationships",
+  requireAuth,
+  requireSourceAdmin,
+  async (req, res) => {
+    try {
+      const functionName = String(
+        req.query.name || ""
+      ).trim();
+
+      if (
+        !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(functionName)
+      ) {
+        return res.status(400).json({
+          error: "Maglagay ng valid na JavaScript function name."
+        });
+      }
+
+      const relationships = [];
+
+      for (const filename of Object.keys(SOURCE_FILE_URLS)) {
+        const file = await inspectSourceFile(filename);
+
+        const found = findFunctionRelationships(
+          file.content,
+          functionName
+        );
+
+        for (const item of found) {
+          relationships.push({
+            ...item,
+            filename
+          });
+        }
+      }
+
+      return res.json({
+        success: true,
+        readOnly: true,
+        retrievalVersion: "3.0",
+        method: "express-route-relationship-scan",
+        functionName,
+        relationshipCount: relationships.length,
+        relationships
+      });
+
+    } catch (error) {
+      console.error(
+        "Relationship Mapping error:",
+        error
+      );
+
+      return res.status(500).json({
+        error: "Hindi nagawa ang Relationship Mapping."
+      });
+    }
+  }
+);
+
 // Basahin ang mismong laman ng isang source file.
 app.get(
   "/admin/source-files/:filename",
