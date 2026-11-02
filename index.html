@@ -2008,12 +2008,13 @@ sourceTestButton.addEventListener("click", async () => {
     }
 
     alert(
-  "SOURCE READER SUCCESS!\n\n" +
+  "SOURCE CODE READER SUCCESS!\n\n" +
   data.files.map(file =>
     `${file.filename}\n` +
     `Lines: ${file.lines}\n` +
     `Newline characters: ${file.newlineCharacters}\n` +
-    `Size: ${file.bytes} bytes`
+    `Size: ${file.bytes} bytes\n` +
+    `SHA-256: ${file.sha256}`
   ).join("\n\n")
 );
 
