@@ -2388,6 +2388,103 @@ app.get(
   }
 );
 
+// =========================================
+// DANEEL CODE RETRIEVAL v1 — READ ONLY
+// =========================================
+
+app.get(
+  "/admin/code-search",
+  requireAuth,
+  requireSourceAdmin,
+  async (req, res) => {
+    try {
+      const query = String(req.query.q || "").trim();
+
+      if (query.length < 2) {
+        return res.status(400).json({
+          error: "Maglagay ng search keyword na hindi bababa sa 2 characters."
+        });
+      }
+
+      if (query.length > 100) {
+        return res.status(400).json({
+          error: "Maximum na 100 characters lamang ang search keyword."
+        });
+      }
+
+      const requestedLimit = Number(req.query.limit || 10);
+
+      const limit = Number.isFinite(requestedLimit)
+        ? Math.min(30, Math.max(1, Math.floor(requestedLimit)))
+        : 10;
+
+      const contextLines = 5;
+      const results = [];
+
+      const filenames = Object.keys(SOURCE_FILE_URLS);
+
+      for (const filename of filenames) {
+        const file = await inspectSourceFile(filename);
+
+        const lines = file.content.split(/\r\n|\n|\r/);
+
+        for (let i = 0; i < lines.length; i++) {
+          if (
+            lines[i].toLowerCase().includes(query.toLowerCase())
+          ) {
+            const start = Math.max(0, i - contextLines);
+            const end = Math.min(
+              lines.length,
+              i + contextLines + 1
+            );
+
+            const excerpt = [];
+
+            for (let j = start; j < end; j++) {
+              excerpt.push({
+                line: j + 1,
+                code: lines[j]
+              });
+            }
+
+            results.push({
+              filename,
+              matchedLine: i + 1,
+              matchedText: lines[i].trim(),
+              excerpt
+            });
+
+            if (results.length >= limit) {
+              break;
+            }
+          }
+        }
+
+        if (results.length >= limit) {
+          break;
+        }
+      }
+
+      return res.json({
+        success: true,
+        readOnly: true,
+        query,
+        totalResults: results.length,
+        limit,
+        contextLines,
+        results
+      });
+
+    } catch (error) {
+      console.error("Code Retrieval error:", error);
+
+      return res.status(500).json({
+        error: "Hindi nagawa ang Code Retrieval."
+      });
+    }
+  }
+);
+
 // Basahin ang mismong laman ng isang source file.
 app.get(
   "/admin/source-files/:filename",
