@@ -2138,11 +2138,12 @@ app.get(
         const result = await inspectSourceFile(filename);
 
         files.push({
-          filename: result.filename,
-          bytes: result.bytes,
-          lines: result.lines,
-          sha256: result.sha256
-        });
+  filename: result.filename,
+  bytes: result.bytes,
+  lines: result.lines,
+  newlineCharacters: result.newlineCharacters,
+  sha256: result.sha256
+});
       }
 
       return res.json({
