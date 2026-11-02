@@ -2566,6 +2566,27 @@ functionTestButton.addEventListener(
   "click",
   testFunctionRetrieval
 );
+  
+// RELATIONSHIP MAPPING BUTTON
+const relationshipTestButton =
+  document.createElement("button");
+
+relationshipTestButton.type = "button";
+relationshipTestButton.className =
+  codeSearchButton.className;
+
+relationshipTestButton.textContent =
+  "🔗 Relationship Mapping";
+
+functionTestButton.insertAdjacentElement(
+  "afterend",
+  relationshipTestButton
+);
+
+relationshipTestButton.addEventListener(
+  "click",
+  testRelationshipMapping
+);
 
 // SEARCH BUTTON
 codeSearchButton.addEventListener(
