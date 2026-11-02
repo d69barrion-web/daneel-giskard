@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daneel SHA-256 Checker</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #101827;
+  color: #e5e7eb;
+  padding: 20px;
+  max-width: 700px;
+  margin: auto;
+}
+h2 { color: #60a5fa; }
+button {
+  background: #2563eb;
+  color: white;
+  border: 0;
+  padding: 13px 20px;
+  border-radius: 9px;
+  font-size: 16px;
+  cursor: pointer;
+}
+button:disabled { opacity: .5; }
+.file {
+  background: #1e293b;
+  padding: 15px;
+  margin-top: 15px;
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.hash {
+  font-family: monospace;
+  font-size: 12px;
+  color: #86efac;
+  line-height: 1.7;
+  user-select: text;
+}
+.small {
+  color: #9ca3af;
+  font-size: 13px;
+}
+#status { margin-top: 15px; }
+</style>
+</head>
+
+<body>
+
+<h2>Daneel SHA-256 Checker</h2>
+
+<p class="small">
+Kinukuha nito ang aktuwal na raw files mula sa GitHub
+at kinukuwenta ang SHA-256 fingerprints.
+</p>
+
+<button id="runBtn" onclick="checkFiles()">
+Check GitHub Files
+</button>
+
+<div id="status"></div>
+<div id="results"></div>
+
+<script>
+const BASE =
+"https://raw.githubusercontent.com/d69barrion-web/daneel-giskard/main/";
+
+const FILES = [
+  "server.js",
+  "index.html",
+  "package.json"
+];
+
+function countLines(text) {
+  return text.split(/\r\n|\n|\r/).length;
+}
+
+async function getSHA256(buffer) {
+  const hashBuffer = await crypto.subtle.digest(
+    "SHA-256",
+    buffer
+  );
+
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(byte => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function checkFiles() {
+  const button = document.getElementById("runBtn");
+  const status = document.getElementById("status");
+  const results = document.getElementById("results");
+
+  button.disabled = true;
+  results.innerHTML = "";
+  status.textContent = "Kinukuha at sinusuri ang GitHub files...";
+
+  try {
+    for (const filename of FILES) {
+      const response = await fetch(
+        BASE + filename + "?t=" + Date.now()
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          filename + ": HTTP " + response.status
+        );
+      }
+
+      const buffer = await response.arrayBuffer();
+
+      const content = new TextDecoder("utf-8", {
+        fatal: true
+      }).decode(buffer);
+
+      const sha256 = await getSHA256(buffer);
+
+      const newlines =
+        (content.match(/\n/g) || []).length;
+
+      const lines = countLines(content);
+
+      const bytes = buffer.byteLength;
+
+      const card = document.createElement("div");
+      card.className = "file";
+
+      const title = document.createElement("h3");
+      title.textContent = filename;
+
+      const details = document.createElement("p");
+      details.textContent =
+        "Lines: " + lines +
+        "\nNewline characters: " + newlines +
+        "\nSize: " + bytes + " bytes";
+
+      details.style.whiteSpace = "pre-line";
+
+      const hashLabel = document.createElement("p");
+      hashLabel.textContent = "SHA-256:";
+
+      const hashValue = document.createElement("div");
+      hashValue.className = "hash";
+      hashValue.textContent = sha256;
+
+      const copyButton = document.createElement("button");
+      copyButton.textContent = "Copy SHA-256";
+      copyButton.style.marginTop = "12px";
+
+      copyButton.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(sha256);
+          copyButton.textContent = "Copied!";
+        } catch {
+          copyButton.textContent = "Copy unavailable";
+        }
+      };
+
+      card.append(
+        title,
+        details,
+        hashLabel,
+        hashValue,
+        copyButton
+      );
+
+      results.appendChild(card);
+    }
+
+    status.textContent = "Tapos na! Lahat ng files ay nasuri.";
+
+  } catch (error) {
+    status.textContent =
+      "May error: " + error.message;
+
+  } finally {
+    button.disabled = false;
+  }
+}
+</script>
+
+</body>
+</html>
