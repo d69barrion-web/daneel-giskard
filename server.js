@@ -2124,6 +2124,232 @@ async function inspectSourceFile(filename) {
   sha256: hash
 };
 }
+// =========================================
+// DANEEL CODE INDEXER v1 — READ ONLY
+// =========================================
+
+// Tukuyin ang line number batay sa character position.
+function getSourceLineNumber(content, position) {
+  return content
+    .slice(0, position)
+    .split(/\r\n|\n|\r/).length;
+}
+
+// Gumawa ng searchable map mula sa source files.
+function buildCodeIndex(sourceFiles) {
+  const index = {
+    version: "1.0",
+    method: "regex-static-scan",
+    readOnly: true,
+    files: [],
+    imports: [],
+    functions: [],
+    routes: [],
+    elementIds: [],
+    eventListeners: [],
+    eventProperties: [],
+    inlineHandlers: [],
+    dependencies: [],
+    summary: {}
+  };
+
+  function add(category, entry) {
+    index[category].push(entry);
+  }
+
+  // File metadata.
+  for (const file of Object.values(sourceFiles)) {
+    index.files.push({
+      filename: file.filename,
+      lines: file.lines,
+      bytes: file.bytes,
+      sha256: file.sha256
+    });
+  }
+
+  // IMPORTS sa server.js.
+  const serverContent = sourceFiles["server.js"].content;
+
+  const importRegex =
+    /^[ \t]*import\s+[\s\S]*?\s+from\s+["']([^"']+)["'];?/gm;
+
+  let match;
+
+  while ((match = importRegex.exec(serverContent)) !== null) {
+    add("imports", {
+      file: "server.js",
+      line: getSourceLineNumber(serverContent, match.index),
+      module: match[1]
+    });
+  }
+
+  const sideEffectImportRegex =
+    /^[ \t]*import\s+["']([^"']+)["'];?/gm;
+
+  while ((match = sideEffectImportRegex.exec(serverContent)) !== null) {
+    add("imports", {
+      file: "server.js",
+      line: getSourceLineNumber(serverContent, match.index),
+      module: match[1]
+    });
+  }
+
+  // FUNCTIONS sa server.js at index.html.
+  for (const filename of ["server.js", "index.html"]) {
+    const content = sourceFiles[filename].content;
+
+    const functionPatterns = [
+      /^[ \t]*(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm,
+
+      /^[ \t]*(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:function\b|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)/gm
+    ];
+
+    for (const pattern of functionPatterns) {
+      while ((match = pattern.exec(content)) !== null) {
+        add("functions", {
+          file: filename,
+          line: getSourceLineNumber(content, match.index),
+          name: match[1]
+        });
+      }
+    }
+  }
+
+  // EXPRESS API ROUTES sa server.js.
+  const routeRegex =
+    /\b(app|router)\s*\.\s*(get|post|put|patch|delete|options|all)\s*\(\s*(['"])([^'"]+)\3/g;
+
+  while ((match = routeRegex.exec(serverContent)) !== null) {
+    add("routes", {
+      file: "server.js",
+      line: getSourceLineNumber(serverContent, match.index),
+      method: match[2].toUpperCase(),
+      path: match[4]
+    });
+  }
+
+  // HTML IDs at dynamically assigned element IDs.
+  const htmlContent = sourceFiles["index.html"].content;
+
+  const htmlIdRegex =
+    /\bid\s*=\s*(["'])([^"']+)\1/g;
+
+  while ((match = htmlIdRegex.exec(htmlContent)) !== null) {
+    add("elementIds", {
+      file: "index.html",
+      line: getSourceLineNumber(htmlContent, match.index),
+      id: match[2],
+      source: "id attribute or assignment"
+    });
+  }
+
+  const assignedIdRegex =
+    /\.id\s*=\s*(["'])([^"']+)\1/g;
+
+  while ((match = assignedIdRegex.exec(htmlContent)) !== null) {
+    add("elementIds", {
+      file: "index.html",
+      line: getSourceLineNumber(htmlContent, match.index),
+      id: match[2],
+      source: "JavaScript assignment"
+    });
+  }
+
+  // addEventListener() calls.
+  const listenerRegex =
+    /\.addEventListener\s*\(\s*(["'])([^"']+)\1/g;
+
+  while ((match = listenerRegex.exec(htmlContent)) !== null) {
+    add("eventListeners", {
+      file: "index.html",
+      line: getSourceLineNumber(htmlContent, match.index),
+      event: match[2]
+    });
+  }
+
+  // JavaScript event properties gaya ng button.onclick = ...
+  const eventPropertyRegex =
+    /\.on(click|change|input|submit|keydown|keyup|focus|blur)\s*=/gi;
+
+  while ((match = eventPropertyRegex.exec(htmlContent)) !== null) {
+    add("eventProperties", {
+      file: "index.html",
+      line: getSourceLineNumber(htmlContent, match.index),
+      event: match[1].toLowerCase()
+    });
+  }
+
+  // Inline HTML handlers gaya ng onclick="..."
+  const inlineHandlerRegex =
+    /\bon(click|change|input|submit|keydown|keyup|focus|blur)\s*=\s*(["'])/gi;
+
+  while ((match = inlineHandlerRegex.exec(htmlContent)) !== null) {
+    add("inlineHandlers", {
+      file: "index.html",
+      line: getSourceLineNumber(htmlContent, match.index),
+      event: match[1].toLowerCase()
+    });
+  }
+
+  // Dependencies mula sa package.json.
+  const packageContent = sourceFiles["package.json"].content;
+  const packageData = JSON.parse(packageContent);
+
+  for (const [name, version] of Object.entries(
+    packageData.dependencies || {}
+  )) {
+    add("dependencies", {
+      name,
+      version
+    });
+  }
+
+  // Bilang ng bawat uri ng entry.
+  index.summary = {
+    files: index.files.length,
+    imports: index.imports.length,
+    functions: index.functions.length,
+    routes: index.routes.length,
+    elementIds: index.elementIds.length,
+    eventListeners: index.eventListeners.length,
+    eventProperties: index.eventProperties.length,
+    inlineHandlers: index.inlineHandlers.length,
+    dependencies: index.dependencies.length
+  };
+
+  return index;
+}
+
+// Endpoint para makuha ang Code Index.
+app.get(
+  "/admin/code-index",
+  requireAuth,
+  requireSourceAdmin,
+  async (req, res) => {
+    try {
+      const sourceFiles = {};
+
+      for (const filename of Object.keys(SOURCE_FILE_URLS)) {
+        sourceFiles[filename] = await inspectSourceFile(filename);
+      }
+
+      const index = buildCodeIndex(sourceFiles);
+
+      return res.json({
+        success: true,
+        readOnly: true,
+        index
+      });
+
+    } catch (error) {
+      console.error("Code Indexer error:", error);
+
+      return res.status(500).json({
+        error: "Hindi nagawa ang Code Index."
+      });
+    }
+  }
+);
 
 // Listahan at metadata ng available source files.
 app.get(
