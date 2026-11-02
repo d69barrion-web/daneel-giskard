@@ -2349,6 +2349,137 @@ async function searchDaneelCode() {
   }
 }
 
+// =========================================
+// FUNCTION-AWARE RETRIEVAL v2 — TEST
+// =========================================
+
+async function testFunctionRetrieval() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  const functionName = "requireSourceAdmin";
+
+  functionTestButton.disabled = true;
+  functionTestButton.textContent = "Loading...";
+
+  explorerInfo.textContent =
+    `Kinukuha ang buong function: ${functionName}`;
+
+  explorerOutput.textContent =
+    "Retrieving function definition and references...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/code-function?name=${encodeURIComponent(functionName)}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    if (!Array.isArray(data.functions) ||
+        !Array.isArray(data.references)) {
+      throw new Error("Invalid Function Retrieval response.");
+    }
+
+    explorerInfo.textContent =
+      `Function: ${data.functionName} | ` +
+      `Definitions: ${data.definitionCount} | ` +
+      `References: ${data.referenceCount}`;
+
+    let output =
+      `FUNCTION-AWARE RETRIEVAL v${data.retrievalVersion}\n` +
+      `========================================\n\n` +
+      `FUNCTION NAME: ${data.functionName}\n` +
+      `METHOD: ${data.method}\n` +
+      `READ ONLY: ${data.readOnly}\n\n`;
+
+    if (data.functions.length === 0) {
+      output += "WALANG FUNCTION DEFINITION NA NAKITA.\n\n";
+    }
+
+    data.functions.forEach((fn, index) => {
+      const numberedCode = fn.code
+        .split(/\r\n|\n|\r/)
+        .map((line, i) =>
+          String(fn.startLine + i).padStart(5, " ") +
+          " | " + line
+        )
+        .join("\n");
+
+      output +=
+        `FUNCTION DEFINITION ${index + 1}\n` +
+        `FILE: ${fn.filename}\n` +
+        `START LINE: ${fn.startLine}\n` +
+        `END LINE: ${fn.endLine}\n` +
+        `TOTAL LINES: ${fn.totalLines}\n\n` +
+        numberedCode +
+        "\n\n";
+    });
+
+    output +=
+      "\n" + "=".repeat(40) +
+      "\nFUNCTION REFERENCES\n" +
+      "=".repeat(40) + "\n\n";
+
+    if (data.references.length === 0) {
+      output += "Walang references na nakita.\n";
+    }
+
+    data.references.forEach((ref, index) => {
+      output +=
+        `${index + 1}. ${ref.filename}\n` +
+        `   LINE: ${ref.line}\n` +
+        `   CODE: ${ref.code}\n\n`;
+    });
+
+    explorerOutput.textContent = output;
+
+  } catch (error) {
+    explorerInfo.textContent =
+      "Function Retrieval failed.";
+
+    explorerOutput.textContent =
+      "ERROR:\n\n" + error.message;
+
+  } finally {
+    functionTestButton.disabled = false;
+    functionTestButton.textContent =
+      "🧩 Test Function Retrieval";
+  }
+}
+
+// Gumawa ng bagong button katabi ng Search button.
+const functionTestButton = document.createElement("button");
+
+functionTestButton.type = "button";
+functionTestButton.className = codeSearchButton.className;
+functionTestButton.textContent =
+  "🧩 Test Function Retrieval";
+
+codeSearchButton.insertAdjacentElement(
+  "afterend",
+  functionTestButton
+);
+
+functionTestButton.addEventListener(
+  "click",
+  testFunctionRetrieval
+);
+
 // SEARCH BUTTON
 codeSearchButton.addEventListener(
   "click",
