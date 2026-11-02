@@ -1082,6 +1082,152 @@ header {
 .new-btn:active {
   transform: scale(0.99);
 }
+    
+/* =====================================
+   DANЕEL - CHATGPT STYLE COMPOSER
+   ===================================== */
+
+.composer {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Main unified composer container */
+#inputArea {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+#inputArea:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(70, 145, 255, .12);
+}
+
+/* Plus button area */
+.composer-tools {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+.plus-btn {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: white;
+  font-size: 30px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+.plus-btn:hover,
+.plus-btn[aria-expanded="true"] {
+  background: var(--panel2);
+}
+
+/* Message input */
+#message {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  max-height: 180px;
+  margin: 0;
+  padding: 10px 2px;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow-y: auto;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+#message::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+/* Send button */
+#sendBtn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--blue);
+  color: white;
+  font-size: 27px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: filter .2s, transform .2s;
+}
+
+#sendBtn:hover {
+  filter: brightness(1.12);
+}
+
+#sendBtn:active {
+  transform: scale(.94);
+}
+
+/* Floating feature menu */
+.feature-menu {
+  position: absolute;
+  bottom: 54px;
+  left: 0;
+  z-index: 500;
+  width: 245px;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: 0 10px 30px rgba(0,0,0,.45);
+  box-sizing: border-box;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  #inputArea {
+    gap: 7px;
+    padding: 8px 9px;
+    border-radius: 27px;
+  }
+
+  .plus-btn {
+    width: 40px;
+    height: 42px;
+  }
+
+  #message {
+    font-size: 16px;
+  }
+
+  #sendBtn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
    
 </style>
 </head>
