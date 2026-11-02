@@ -1968,7 +1968,62 @@ auth.getRedirectResult()
       "\nDetalye: " + error.message
     );
   });
+  
+// TEMPORARY SOURCE READER TEST
+const sourceTestButton = document.createElement("button");
 
+sourceTestButton.type = "button";
+sourceTestButton.className = "primary-btn";
+sourceTestButton.textContent = "🔎 Test Daneel Source Reader";
+
+$("memoryView").appendChild(sourceTestButton);
+
+sourceTestButton.addEventListener("click", async () => {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  sourceTestButton.disabled = true;
+  sourceTestButton.textContent = "Sinusuri...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/source-files`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    alert(
+      "SOURCE READER SUCCESS!\n\n" +
+      data.files.map(file =>
+        `${file.filename}\n` +
+        `Lines: ${file.lines}\n` +
+        `Size: ${file.bytes} bytes`
+      ).join("\n\n")
+    );
+
+  } catch (error) {
+    alert("SOURCE READER TEST FAILED:\n\n" + error.message);
+
+  } finally {
+    sourceTestButton.disabled = false;
+    sourceTestButton.textContent = "🔎 Test Daneel Source Reader";
+  }
+});
 
 const profileEditor = $("profileEditor");
 const preferredNameInput = $("preferredNameInput");
