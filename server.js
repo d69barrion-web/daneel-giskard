@@ -3,6 +3,8 @@ import cors from "cors";
 import OpenAI, { toFile } from "openai";
 import admin from "firebase-admin";
 import multer from "multer";
+import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 
 const app = express();
 
@@ -2062,6 +2064,134 @@ app.get("/history", requireAuth, async (req, res) => {
   }
 });
 
+/* =========================================
+   DANEEL SELF-INSPECTION — SOURCE READER V1
+   READ-ONLY: WALANG FILE MODIFICATION
+========================================= */
+
+// Mga file lamang na pinapayagang basahin.
+const SOURCE_FILE_URLS = {
+  "server.js": new URL("./server.js", import.meta.url),
+  "index.html": new URL("./index.html", import.meta.url),
+  "package.json": new URL("./package.json", import.meta.url)
+};
+
+// Tanging itinakdang administrator ang maaaring gumamit.
+function requireSourceAdmin(req, res, next) {
+  const adminEmail = String(
+    process.env.DANEEL_ADMIN_EMAIL || ""
+  ).trim().toLowerCase();
+
+  const userEmail = String(
+    req.user?.email || ""
+  ).trim().toLowerCase();
+
+  if (!adminEmail) {
+    return res.status(503).json({
+      error: "Hindi pa naka-configure ang source reader administrator."
+    });
+  }
+
+  if (!userEmail || userEmail !== adminEmail) {
+    return res.status(403).json({
+      error: "Wala kang pahintulot na basahin ang source files."
+    });
+  }
+
+  return next();
+}
+
+// Basahin at suriin ang isang pinapayagang source file.
+async function inspectSourceFile(filename) {
+  const fileURL = SOURCE_FILE_URLS[filename];
+
+  if (!fileURL) {
+    throw new Error("Hindi pinapayagang source file.");
+  }
+
+  const content = await readFile(fileURL, "utf8");
+
+  const hash = createHash("sha256")
+    .update(content)
+    .digest("hex");
+
+  return {
+    filename,
+    content,
+    bytes: Buffer.byteLength(content, "utf8"),
+    lines: content.split(/\r\n|\n|\r/).length,
+    sha256: hash
+  };
+}
+
+// Listahan at metadata ng available source files.
+app.get(
+  "/admin/source-files",
+  requireAuth,
+  requireSourceAdmin,
+  async (req, res) => {
+    try {
+      const files = [];
+
+      for (const filename of Object.keys(SOURCE_FILE_URLS)) {
+        const result = await inspectSourceFile(filename);
+
+        files.push({
+          filename: result.filename,
+          bytes: result.bytes,
+          lines: result.lines,
+          sha256: result.sha256
+        });
+      }
+
+      return res.json({
+        success: true,
+        readOnly: true,
+        files
+      });
+
+    } catch (error) {
+      console.error("Source file listing error:", error.message);
+
+      return res.status(500).json({
+        error: "Hindi mabasa ang source files."
+      });
+    }
+  }
+);
+
+// Basahin ang mismong laman ng isang source file.
+app.get(
+  "/admin/source-files/:filename",
+  requireAuth,
+  requireSourceAdmin,
+  async (req, res) => {
+    try {
+      const filename = req.params.filename;
+
+      if (!Object.hasOwn(SOURCE_FILE_URLS, filename)) {
+        return res.status(404).json({
+          error: "Hindi kilala o hindi pinapayagang source file."
+        });
+      }
+
+      const result = await inspectSourceFile(filename);
+
+      return res.json({
+        success: true,
+        readOnly: true,
+        ...result
+      });
+
+    } catch (error) {
+      console.error("Source file read error:", error.message);
+
+      return res.status(500).json({
+        error: "Hindi mabasa ang hiniling na source file."
+      });
+    }
+  }
+);
 
 const PORT = process.env.PORT || 10000;
 
