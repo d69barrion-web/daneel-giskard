@@ -2116,12 +2116,13 @@ async function inspectSourceFile(filename) {
     .digest("hex");
 
   return {
-    filename,
-    content,
-    bytes: Buffer.byteLength(content, "utf8"),
-    lines: content.split(/\r\n|\n|\r/).length,
-    sha256: hash
-  };
+  filename,
+  content,
+  bytes: Buffer.byteLength(content, "utf8"),
+  lines: content.split(/\r\n|\n|\r/).length,
+  newlineCharacters: (content.match(/\n/g) || []).length,
+  sha256: hash
+};
 }
 
 // Listahan at metadata ng available source files.
