@@ -2462,6 +2462,93 @@ async function testFunctionRetrieval() {
   }
 }
 
+
+async function testRelationshipMapping() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  const functionName = "requireSourceAdmin";
+
+  relationshipTestButton.disabled = true;
+  relationshipTestButton.textContent = "Loading...";
+
+  explorerInfo.textContent =
+    `Sinusuri ang relationships ng: ${functionName}`;
+
+  explorerOutput.textContent =
+    "Mapping function relationships...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/code-relationships?name=${encodeURIComponent(functionName)}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    if (!Array.isArray(data.relationships)) {
+      throw new Error("Invalid Relationship Mapping response.");
+    }
+
+    explorerInfo.textContent =
+      `Function: ${data.functionName} | ` +
+      `Relationships: ${data.relationshipCount}`;
+
+    let output =
+      `CODE RELATIONSHIP MAPPING v${data.retrievalVersion}\n` +
+      "========================================\n\n" +
+      `FUNCTION NAME: ${data.functionName}\n` +
+      `METHOD: ${data.method}\n` +
+      `READ ONLY: ${data.readOnly}\n` +
+      `RELATIONSHIPS FOUND: ${data.relationshipCount}\n\n`;
+
+    if (data.relationships.length === 0) {
+      output +=
+        "WALANG ROUTE RELATIONSHIP NA NAKITA.\n";
+    }
+
+    data.relationships.forEach((item, index) => {
+      output +=
+        `RELATIONSHIP ${index + 1}\n` +
+        `FILE: ${item.filename}\n` +
+        `METHOD: ${item.method}\n` +
+        `ROUTE: ${item.routePath}\n` +
+        `LINE: ${item.line}\n` +
+        `ROLE: ${item.role}\n` +
+        `TYPE: ${item.relationshipType}\n` +
+        `MATCHED CODE: ${item.matchedCode}\n\n`;
+    });
+
+    explorerOutput.textContent = output;
+
+  } catch (error) {
+    explorerInfo.textContent =
+      "Relationship Mapping failed.";
+
+    explorerOutput.textContent =
+      "ERROR:\n\n" + error.message;
+
+  } finally {
+    relationshipTestButton.disabled = false;
+    relationshipTestButton.textContent =
+      "🔗 Relationship Mapping";
+  }
+}
+
 // Gumawa ng bagong button katabi ng Search button.
 const functionTestButton = document.createElement("button");
 
