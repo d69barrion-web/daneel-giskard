@@ -2660,9 +2660,7 @@ function retrieveNamedFunction(source, functionName) {
 
 // Hinahanap ang mga reference sa function name.
 function findFunctionReferences(source, functionName) {
-  const masked = maskJavaScriptNonCode(source);
   const lines = source.split(/\r\n|\n|\r/);
-  const maskedLines = masked.split(/\r\n|\n|\r/);
 
   const escapedName = functionName.replace(
     /[.*+?^${}()|[\]\\]/g,
@@ -2675,11 +2673,12 @@ function findFunctionReferences(source, functionName) {
 
   const references = [];
 
-  for (let i = 0; i < maskedLines.length; i++) {
-    if (pattern.test(maskedLines[i])) {
+  for (let i = 0; i < lines.length; i++) {
+    if (pattern.test(lines[i])) {
       references.push({
         line: i + 1,
-        code: lines[i].trim()
+        code: lines[i].trim(),
+        matchType: "textual-occurrence"
       });
     }
   }
