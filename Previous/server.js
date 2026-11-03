@@ -4,7 +4,7 @@ import cors from "cors";
 import OpenAI, { toFile } from "openai";
 import admin from "firebase-admin";
 import multer from "multer";
-
+import * as acorn from "acorn";
 const app = express();
 
 const upload = multer({
