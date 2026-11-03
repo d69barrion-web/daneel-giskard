@@ -2854,6 +2854,137 @@ async function testCodeRelationshipsV4() {
   }
 }
 
+async function testCodeRelationshipsV41() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  const functionName = (
+    prompt(
+      "Anong function ang hahanapin?",
+      "requireSourceAdmin"
+    ) || ""
+  ).trim();
+
+  if (!functionName) return;
+
+  relationshipMappingV41Button.disabled = true;
+  relationshipMappingV41Button.textContent =
+    "Analyzing...";
+
+  explorerInfo.textContent =
+    "Running AST Relationship Mapping v4.1...";
+
+  explorerOutput.textContent =
+    `Analyzing definition and references of ${functionName} in server.js...`;
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/code-relationships-v4-1?name=${encodeURIComponent(functionName)}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.error ||
+        data.details ||
+        `HTTP ${response.status}`
+      );
+    }
+
+    explorerInfo.textContent =
+      `${data.retrievalVersion} | ` +
+      `${data.definitionCount} definitions | ` +
+      `${data.relationshipCount} relationships | ` +
+      `${data.sourceLines} source lines`;
+
+    let output =
+      `DANEEL RELATIONSHIP MAPPING v${data.retrievalVersion}\n` +
+      "========================================\n\n" +
+      `METHOD: ${data.method}\n` +
+      `PARSER: ${data.parser}\n` +
+      `FILE: ${data.filename}\n` +
+      `READ ONLY: ${data.readOnly}\n` +
+      `FUNCTION: ${data.functionName}\n` +
+      `SOURCE BYTES: ${data.sourceBytes}\n` +
+      `SOURCE LINES: ${data.sourceLines}\n` +
+      `SHA-256: ${data.sourceSHA256}\n\n`;
+
+    // FUNCTION DEFINITIONS
+    output +=
+      "FUNCTION DEFINITIONS\n" +
+      "========================================\n\n" +
+      `DEFINITION COUNT: ${data.definitionCount}\n\n`;
+
+    if (!data.definitions?.length) {
+      output += "No function definitions found.\n\n";
+    } else {
+      data.definitions.forEach((item, index) => {
+        output +=
+          `[${index + 1}]\n` +
+          `FUNCTION: ${item.functionName}\n` +
+          `TYPE: ${item.definitionType}\n` +
+          `PARAMETERS: ${item.parameters.join(", ")}\n` +
+          `START: ${item.startLine}:${item.startColumn}\n` +
+          `END: ${item.endLine}:${item.endColumn}\n` +
+          `SOURCE RANGE: ${item.sourceStart}-${item.sourceEnd}\n` +
+          "SOURCE CODE:\n" +
+          `${item.sourceCode}\n\n` +
+          "----------------------------------------\n\n";
+      });
+    }
+
+    // FUNCTION RELATIONSHIPS
+    output +=
+      "FUNCTION RELATIONSHIPS\n" +
+      "========================================\n\n" +
+      `RELATIONSHIP COUNT: ${data.relationshipCount}\n\n`;
+
+    if (!data.relationships?.length) {
+      output += "No relationships found.\n";
+    } else {
+      data.relationships.forEach((item, index) => {
+        output +=
+          `[${index + 1}]\n` +
+          `FUNCTION: ${item.functionName}\n` +
+          `TYPE: ${item.relationshipType}\n` +
+          `ROLE: ${item.role}\n` +
+          `METHOD: ${item.method}\n` +
+          `ROUTE: ${item.routePath}\n` +
+          `ARGUMENT POSITION: ${item.argumentPosition}\n` +
+          `LINE: ${item.line}:${item.column}\n` +
+          `END: ${item.endLine}:${item.endColumn}\n` +
+          `CODE: ${item.matchedCode}\n\n`;
+      });
+    }
+
+    explorerOutput.textContent = output;
+
+  } catch (error) {
+    explorerInfo.textContent =
+      "Relationship Mapping v4.1 failed.";
+
+    explorerOutput.textContent =
+      "ERROR:\n\n" + error.message;
+
+  } finally {
+    relationshipMappingV41Button.disabled = false;
+    relationshipMappingV41Button.textContent =
+      "🔍 Relationship Mapping v4.1";
+  }
+}
+
 
 // Gumawa ng bagong button katabi ng Search button.
 const functionTestButton = document.createElement("button");
@@ -2955,6 +3086,27 @@ acornParserTestButton.insertAdjacentElement(
 relationshipMappingV4Button.addEventListener(
   "click",
   testCodeRelationshipsV4
+);
+
+// RELATIONSHIP MAPPING V4.1 BUTTON
+const relationshipMappingV41Button =
+  document.createElement("button");
+
+relationshipMappingV41Button.type = "button";
+relationshipMappingV41Button.className =
+  codeSearchButton.className;
+
+relationshipMappingV41Button.textContent =
+  "🔍 Relationship Mapping v4.1";
+
+relationshipMappingV4Button.insertAdjacentElement(
+  "afterend",
+  relationshipMappingV41Button
+);
+
+relationshipMappingV41Button.addEventListener(
+  "click",
+  testCodeRelationshipsV41
 );
 
 // SEARCH BUTTON
