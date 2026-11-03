@@ -2071,9 +2071,9 @@ app.get("/history", requireAuth, async (req, res) => {
 
 // Mga file lamang na pinapayagang basahin.
 const SOURCE_FILE_URLS = {
-  "server.js": new URL("./server.js", import.meta.url),
   "index.html": new URL("./index.html", import.meta.url),
-  "package.json": new URL("./package.json", import.meta.url)
+  "package.json": new URL("./package.json", import.meta.url),
+  "server.js": new URL("./server.js", import.meta.url)
 };
 
 // Tanging itinakdang administrator ang maaaring gumamit.
