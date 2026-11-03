@@ -3072,6 +3072,222 @@ for (const marker of routeMarkers) {
   return relationships;
 }
 
+function findFunctionRelationshipsAST(source, functionName) {
+  const ast = acorn.parse(source, {
+    ecmaVersion: "latest",
+    sourceType: "module",
+    locations: true
+  });
+
+  const relationships = [];
+
+  const routeMethods = new Set([
+    "get",
+    "post",
+    "put",
+    "patch",
+    "delete",
+    "use",
+    "options",
+    "head",
+    "all"
+  ]);
+
+  function getRouteInfo(node) {
+    if (
+      node.type !== "CallExpression" ||
+      node.callee.type !== "MemberExpression" ||
+      node.callee.computed ||
+      node.callee.object.type !== "Identifier" ||
+      node.callee.object.name !== "app" ||
+      node.callee.property.type !== "Identifier"
+    ) {
+      return null;
+    }
+
+    const method = node.callee.property.name;
+
+    if (!routeMethods.has(method)) {
+      return null;
+    }
+
+    const firstArg = node.arguments[0];
+
+    let routePath = "(route path not identified)";
+
+    if (
+      firstArg &&
+      firstArg.type === "Literal" &&
+      typeof firstArg.value === "string"
+    ) {
+      routePath = firstArg.value;
+    }
+
+    return {
+      method: method.toUpperCase(),
+      routePath
+    };
+  }
+
+  function walk(node, callback, parent = null) {
+    if (!node || typeof node !== "object") {
+      return;
+    }
+
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        walk(item, callback, parent);
+      }
+      return;
+    }
+
+    if (typeof node.type !== "string") {
+      return;
+    }
+
+    callback(node, parent);
+
+    for (const [key, value] of Object.entries(node)) {
+      if (
+        key === "loc" ||
+        key === "start" ||
+        key === "end"
+      ) {
+        continue;
+      }
+
+      if (value && typeof value === "object") {
+        walk(value, callback, node);
+      }
+    }
+  }
+
+  function isIdentifierReference(node, parent) {
+    if (!parent) return true;
+
+    // Non-computed property names are not references.
+    if (
+      parent.type === "MemberExpression" &&
+      parent.property === node &&
+      !parent.computed
+    ) {
+      return false;
+    }
+
+    // Object literal keys are not references.
+    if (
+      parent.type === "Property" &&
+      parent.key === node &&
+      !parent.computed &&
+      !parent.shorthand
+    ) {
+      return false;
+    }
+
+    // Variable and function declaration names.
+    if (
+      (
+        parent.type === "VariableDeclarator" &&
+        parent.id === node
+      ) ||
+      (
+        (
+          parent.type === "FunctionDeclaration" ||
+          parent.type === "FunctionExpression" ||
+          parent.type === "ClassDeclaration" ||
+          parent.type === "ClassExpression"
+        ) &&
+        parent.id === node
+      )
+    ) {
+      return false;
+    }
+
+    // Function parameters.
+    if (
+      (
+        parent.type === "FunctionDeclaration" ||
+        parent.type === "FunctionExpression" ||
+        parent.type === "ArrowFunctionExpression"
+      ) &&
+      parent.params.includes(node)
+    ) {
+      return false;
+    }
+
+    // Labels are not function references.
+    if (
+      (
+        parent.type === "LabeledStatement" &&
+        parent.label === node
+      ) ||
+      (
+        parent.type === "BreakStatement" &&
+        parent.label === node
+      ) ||
+      (
+        parent.type === "ContinueStatement" &&
+        parent.label === node
+      )
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  walk(ast, node => {
+    const route = getRouteInfo(node);
+
+    if (!route) return;
+
+    // Argument 0 is normally the route path.
+    // Middleware and handlers begin at argument 1.
+    for (
+      let argumentIndex = 1;
+      argumentIndex < node.arguments.length;
+      argumentIndex++
+    ) {
+      const argument = node.arguments[argumentIndex];
+
+      walk(argument, (child, parent) => {
+        if (
+          child.type !== "Identifier" ||
+          child.name !== functionName ||
+          !isIdentifierReference(child, parent)
+        ) {
+          return;
+        }
+
+        const directReference =
+          child === argument;
+
+        relationships.push({
+          functionName,
+          relationshipType:
+            "ast-express-route-reference",
+          role: directReference
+            ? "middleware-or-handler"
+            : "nested-route-reference",
+          argumentPosition: argumentIndex,
+          method: route.method,
+          routePath: route.routePath,
+          line: child.loc.start.line,
+          column: child.loc.start.column,
+          endLine: child.loc.end.line,
+          endColumn: child.loc.end.column,
+          matchedCode: source.slice(
+            child.start,
+            child.end
+          )
+        });
+      });
+    }
+  });
+
+  return relationships;
+}
+
 // =========================================
 // RELATIONSHIP MAPPING ENDPOINT v3
 // =========================================
@@ -3136,6 +3352,65 @@ app.get(
 
       return res.status(500).json({
         error: "Hindi nagawa ang Relationship Mapping."
+      });
+    }
+  }
+);
+
+app.get(
+  "/admin/code-relationships-v4",
+  requireAuth,
+  requireSourceAdmin,
+  async (req, res) => {
+    try {
+      const functionName = String(
+        req.query.name || ""
+      ).trim();
+
+      if (
+        !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(functionName)
+      ) {
+        return res.status(400).json({
+          error: "Maglagay ng valid na JavaScript function name."
+        });
+      }
+
+      const file = await inspectSourceFile("server.js");
+
+      const relationships =
+        findFunctionRelationshipsAST(
+          file.content,
+          functionName
+        );
+
+      return res.json({
+        success: true,
+        readOnly: true,
+        retrievalVersion: "4.0",
+        method: "acorn-ast-express-route-scan",
+        parser: "Acorn",
+        functionName,
+        filename: file.filename,
+        sourceBytes: file.bytes,
+        sourceLines: file.lines,
+        sourceSHA256: file.sha256,
+        relationshipCount: relationships.length,
+        relationships
+      });
+
+    } catch (error) {
+      console.error(
+        "Relationship Mapping v4 error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        readOnly: true,
+        error: "Hindi nagawa ang AST Relationship Mapping.",
+        details: error.message,
+        line: error.loc?.line || null,
+        column: error.loc?.column ?? null
       });
     }
   }
