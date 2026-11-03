@@ -2829,6 +2829,17 @@ function findFunctionRelationships(source, functionName) {
       closeParen
     );
 
+    if (originalCall.includes(functionName)) {
+  console.log("TARGET FOUND INSIDE ROUTE:", {
+    functionName,
+    routeCall: originalCall.slice(0, 300),
+    maskedContainsTarget:
+      maskedCall.includes(functionName),
+    originalContainsTarget:
+      originalCall.includes(functionName)
+  });
+}
+
     // Hanapin ang target sa code, hindi sa comments o strings.
     targetPattern.lastIndex = 0;
 
