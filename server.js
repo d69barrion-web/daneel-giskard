@@ -2486,6 +2486,103 @@ app.get(
 );
 
 // =========================================
+// DANEEL CODE RETRIEVAL v4 — LINE RANGE
+// READ ONLY
+// =========================================
+
+app.get(
+  "/admin/code-range",
+  requireAuth,
+  requireSourceAdmin,
+  async (req, res) => {
+    try {
+      const filename = String(
+        req.query.filename || ""
+      ).trim();
+
+      const startLine = Number(req.query.start);
+      const endLine = Number(req.query.end);
+
+      // Tiyaking kabilang sa whitelist ang file.
+      if (!Object.hasOwn(SOURCE_FILE_URLS, filename)) {
+        return res.status(400).json({
+          error: "Hindi pinapayagang basahin ang file na ito."
+        });
+      }
+
+      // Validate line range.
+      if (
+        !Number.isInteger(startLine) ||
+        !Number.isInteger(endLine) ||
+        startLine < 1 ||
+        endLine < startLine
+      ) {
+        return res.status(400).json({
+          error: "Invalid line range."
+        });
+      }
+
+      // Maximum 500 lines bawat request.
+      if (endLine - startLine + 1 > 500) {
+        return res.status(400).json({
+          error: "Maximum na 500 lines lamang bawat request."
+        });
+      }
+
+      const file = await inspectSourceFile(filename);
+
+      const lines = file.content.split(/\r\n|\n|\r/);
+
+      if (startLine > lines.length) {
+        return res.status(400).json({
+          error: "Lampas sa kabuuang bilang ng lines ang starting line."
+        });
+      }
+
+      const actualEndLine = Math.min(
+        endLine,
+        lines.length
+      );
+
+      const results = [];
+
+      for (
+        let i = startLine - 1;
+        i < actualEndLine;
+        i++
+      ) {
+        results.push({
+          line: i + 1,
+          code: lines[i]
+        });
+      }
+
+      return res.json({
+        success: true,
+        readOnly: true,
+        retrievalVersion: "4.0",
+        method: "line-range-reader",
+        filename,
+        totalFileLines: lines.length,
+        requestedStart: startLine,
+        requestedEnd: endLine,
+        returnedStart: startLine,
+        returnedEnd: actualEndLine,
+        returnedLines: results.length,
+        results
+      });
+
+    } catch (error) {
+      console.error("Code Range Retrieval error:", error);
+
+      return res.status(500).json({
+        error: "Hindi nagawa ang Code Range Retrieval."
+      });
+    }
+  }
+);
+
+// =========================================
 // DANEEL CODE RETRIEVAL v2 — FUNCTION-AWARE
 // READ ONLY
 // =========================================
