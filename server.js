@@ -2773,6 +2773,25 @@ app.get(
 // kung saan ginagamit ang target function.
 function findFunctionRelationships(source, functionName) {
   const masked = maskJavaScriptNonCode(source);
+  let pos = -1;
+
+while (
+  (pos = source.indexOf(functionName, pos + 1)) !== -1
+) {
+  console.log("TARGET MASK STATUS:", {
+    line: getFunctionLineNumber(source, pos),
+    preserved:
+      masked.slice(pos, pos + functionName.length) === functionName,
+    original: source.slice(
+      Math.max(0, pos - 60),
+      pos + functionName.length + 60
+    ),
+    masked: masked.slice(
+      Math.max(0, pos - 60),
+      pos + functionName.length + 60
+    )
+  });
+}
   const routeMarkers = [
   '"/admin/code-index"',
   '"/admin/source-files"',
