@@ -6,6 +6,7 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "acorn": "^8.19.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "firebase-admin": "^13.5.0",
