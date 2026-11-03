@@ -2728,7 +2728,28 @@ lineRangeReaderButton.addEventListener(
   "click",
   testLineRangeReader
 );
+  
+// ACORN PARSER TEST BUTTON
+const acornParserTestButton =
+  document.createElement("button");
 
+acornParserTestButton.type = "button";
+acornParserTestButton.className =
+  codeSearchButton.className;
+
+acornParserTestButton.textContent =
+  "🌳 Acorn Parser Test";
+
+lineRangeReaderButton.insertAdjacentElement(
+  "afterend",
+  acornParserTestButton
+);
+
+acornParserTestButton.addEventListener(
+  "click",
+  testAcornParser
+);
+  
 // SEARCH BUTTON
 codeSearchButton.addEventListener(
   "click",
