@@ -2773,6 +2773,22 @@ app.get(
 // kung saan ginagamit ang target function.
 function findFunctionRelationships(source, functionName) {
   const masked = maskJavaScriptNonCode(source);
+  console.log(
+  "RELATIONSHIP DIAGNOSTIC:",
+  {
+    sourceLength: source.length,
+    maskedLength: masked.length,
+    routeMatches: (
+      masked.match(/\bapp\.(get|post|put|patch|delete|use)\s*\(/g) || []
+    ).length,
+    targetMatches: (
+      masked.match(/\brequireSourceAdmin\b/g) || []
+    ).length,
+    sourceTargetMatches: (
+      source.match(/\brequireSourceAdmin/g) || []
+    ).length
+  }
+);
 
   const routePattern =
     /\bapp\.(get|post|put|patch|delete|use)\s*\(/g;
