@@ -2107,6 +2107,78 @@ explorerOutput.style.cssText = `
   margin:0;
 `;
 
+// RESULT WINDOW CONTAINER
+const explorerResultBox = document.createElement("div");
+
+explorerResultBox.style.cssText = `
+  position:relative;
+  width:100%;
+`;
+
+// COPY BUTTON
+const explorerCopyButton = document.createElement("button");
+
+explorerCopyButton.type = "button";
+explorerCopyButton.textContent = "📋";
+explorerCopyButton.title = "Copy entire result";
+explorerCopyButton.setAttribute(
+  "aria-label",
+  "Copy entire result"
+);
+
+explorerCopyButton.style.cssText = `
+  position:absolute;
+  top:8px;
+  right:8px;
+  z-index:2;
+  width:34px;
+  height:30px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:var(--panel);
+  color:inherit;
+  cursor:pointer;
+  font-size:15px;
+`;
+
+// BIGYAN NG SPACE ANG COPY BUTTON
+explorerOutput.style.paddingTop = "42px";
+
+// ILAGAY ANG OUTPUT SA CONTAINER
+explorerResultBox.appendChild(explorerCopyButton);
+explorerResultBox.appendChild(explorerOutput);
+
+// COPY FUNCTION
+explorerCopyButton.addEventListener("click", async () => {
+  try {
+    const fullResult =
+      (explorerInfo.textContent || "") +
+      "\n\n" +
+      (explorerOutput.textContent || "");
+
+    await navigator.clipboard.writeText(fullResult);
+
+    explorerCopyButton.textContent = "✓";
+    explorerCopyButton.title = "Copied!";
+
+    setTimeout(() => {
+      explorerCopyButton.textContent = "📋";
+      explorerCopyButton.title = "Copy entire result";
+    }, 1500);
+
+  } catch (error) {
+    console.error("Result copy failed:", error);
+
+    explorerCopyButton.textContent = "✕";
+    explorerCopyButton.title = "Copy failed";
+
+    setTimeout(() => {
+      explorerCopyButton.textContent = "📋";
+      explorerCopyButton.title = "Copy entire result";
+    }, 1500);
+  }
+});
+
 codeExplorer.appendChild(explorerTitle);
 codeExplorer.appendChild(explorerInfo);
 
@@ -2146,7 +2218,7 @@ codeSearchControls.appendChild(codeSearchInput);
 codeSearchControls.appendChild(codeSearchButton);
 
 codeExplorer.appendChild(codeSearchControls);
-codeExplorer.appendChild(explorerOutput);
+codeExplorer.appendChild(explorerResultBox);
 
 
 $("memoryView").appendChild(codeExplorer);
