@@ -2828,6 +2828,18 @@ function findFunctionRelationships(source, functionName) {
       openParen + 1,
       closeParen
     );
+    console.log("ROUTE SCAN DETAIL:", {
+  method: routeMatch[1],
+  startLine: getFunctionLineNumber(
+    source,
+    routeMatch.index
+  ),
+  openParen,
+  closeParen,
+  callLength: originalCall.length,
+  containsTarget: originalCall.includes(functionName),
+  routePreview: originalCall.slice(0, 350)
+});
 
     if (originalCall.includes(functionName)) {
   console.log("TARGET FOUND INSIDE ROUTE:", {
