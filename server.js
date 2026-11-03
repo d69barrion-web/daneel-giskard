@@ -3087,11 +3087,33 @@ function findFunctionRelationshipsAST(source, functionName) {
     "put",
     "patch",
     "delete",
-    "use",
     "options",
     "head",
-    "all"
+    "all",
+    "use"
   ]);
+
+  function getStaticString(node) {
+    if (
+      node &&
+      node.type === "Literal" &&
+      typeof node.value === "string"
+    ) {
+      return node.value;
+    }
+
+    if (
+      node &&
+      node.type === "TemplateLiteral" &&
+      node.expressions.length === 0
+    ) {
+      return node.quasis[0]?.value?.cooked ??
+        node.quasis[0]?.value?.raw ??
+        null;
+    }
+
+    return null;
+  }
 
   function getRouteInfo(node) {
     if (
@@ -3112,60 +3134,29 @@ function findFunctionRelationshipsAST(source, functionName) {
     }
 
     const firstArg = node.arguments[0];
+    const firstArgString = getStaticString(firstArg);
 
-    let routePath = "(route path not identified)";
+    let argumentStart = 1;
+    let routePath = firstArgString ??
+      "(route path not identified)";
 
-    if (
-      firstArg &&
-      firstArg.type === "Literal" &&
-      typeof firstArg.value === "string"
-    ) {
-      routePath = firstArg.value;
+    if (method === "use" && firstArgString === null) {
+      argumentStart = 0;
+      routePath = "(app.use middleware mount)";
     }
 
     return {
       method: method.toUpperCase(),
-      routePath
+      routePath,
+      argumentStart
     };
-  }
-
-  function walk(node, callback, parent = null) {
-    if (!node || typeof node !== "object") {
-      return;
-    }
-
-    if (Array.isArray(node)) {
-      for (const item of node) {
-        walk(item, callback, parent);
-      }
-      return;
-    }
-
-    if (typeof node.type !== "string") {
-      return;
-    }
-
-    callback(node, parent);
-
-    for (const [key, value] of Object.entries(node)) {
-      if (
-        key === "loc" ||
-        key === "start" ||
-        key === "end"
-      ) {
-        continue;
-      }
-
-      if (value && typeof value === "object") {
-        walk(value, callback, node);
-      }
-    }
   }
 
   function isIdentifierReference(node, parent) {
     if (!parent) return true;
 
-    // Non-computed property names are not references.
+    // Non-computed member properties are property names,
+    // not variable references.
     if (
       parent.type === "MemberExpression" &&
       parent.property === node &&
@@ -3174,7 +3165,8 @@ function findFunctionRelationshipsAST(source, functionName) {
       return false;
     }
 
-    // Object literal keys are not references.
+    // Object property keys are not references,
+    // except shorthand properties such as { targetName }.
     if (
       parent.type === "Property" &&
       parent.key === node &&
@@ -3184,7 +3176,19 @@ function findFunctionRelationshipsAST(source, functionName) {
       return false;
     }
 
-    // Variable and function declaration names.
+    // Method names and class property names.
+    if (
+      (
+        parent.type === "MethodDefinition" ||
+        parent.type === "PropertyDefinition"
+      ) &&
+      parent.key === node &&
+      !parent.computed
+    ) {
+      return false;
+    }
+
+    // Declaration identifiers.
     if (
       (
         parent.type === "VariableDeclarator" &&
@@ -3215,7 +3219,15 @@ function findFunctionRelationshipsAST(source, functionName) {
       return false;
     }
 
-    // Labels are not function references.
+    // Catch parameter.
+    if (
+      parent.type === "CatchClause" &&
+      parent.param === node
+    ) {
+      return false;
+    }
+
+    // Labels are not references.
     if (
       (
         parent.type === "LabeledStatement" &&
@@ -3236,52 +3248,120 @@ function findFunctionRelationshipsAST(source, functionName) {
     return true;
   }
 
-  walk(ast, node => {
+  function visit(node, callback, parent = null, seen = new WeakSet()) {
+    if (!node || typeof node !== "object") return;
+
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        visit(item, callback, parent, seen);
+      }
+      return;
+    }
+
+    if (
+      typeof node.type !== "string" ||
+      seen.has(node)
+    ) {
+      return;
+    }
+
+    seen.add(node);
+
+    callback(node, parent);
+
+    for (const [key, value] of Object.entries(node)) {
+      if (
+        key === "loc" ||
+        key === "start" ||
+        key === "end"
+      ) {
+        continue;
+      }
+
+      if (Array.isArray(value)) {
+        for (const child of value) {
+          if (child && typeof child.type === "string") {
+            visit(child, callback, node, seen);
+          }
+        }
+      } else if (
+        value &&
+        typeof value.type === "string"
+      ) {
+        visit(value, callback, node, seen);
+      }
+    }
+  }
+
+  function collectReferences(
+    node,
+    route,
+    argumentIndex,
+    directArgument
+  ) {
+    const localSeen = new WeakSet();
+
+    visit(node, (child, parent) => {
+      // A nested Express route is analyzed separately.
+      // Do not count its contents again as part of this route.
+      if (
+        child !== node &&
+        child.type === "CallExpression" &&
+        getRouteInfo(child)
+      ) {
+        return;
+      }
+
+      if (
+        child.type !== "Identifier" ||
+        child.name !== functionName ||
+        !isIdentifierReference(child, parent)
+      ) {
+        return;
+      }
+
+      const isDirect =
+        child === directArgument;
+
+      relationships.push({
+        functionName,
+        relationshipType: "ast-express-route-reference",
+        role: isDirect
+          ? "middleware-reference"
+          : "nested-handler-reference",
+        argumentPosition: argumentIndex,
+        method: route.method,
+        routePath: route.routePath,
+        line: child.loc.start.line,
+        column: child.loc.start.column,
+        endLine: child.loc.end.line,
+        endColumn: child.loc.end.column,
+        matchedCode: source.slice(
+          child.start,
+          child.end
+        )
+      });
+    }, null, localSeen);
+  }
+
+  visit(ast, node => {
     const route = getRouteInfo(node);
 
     if (!route) return;
 
-    // Argument 0 is normally the route path.
-    // Middleware and handlers begin at argument 1.
     for (
-      let argumentIndex = 1;
+      let argumentIndex = route.argumentStart;
       argumentIndex < node.arguments.length;
       argumentIndex++
     ) {
       const argument = node.arguments[argumentIndex];
 
-      walk(argument, (child, parent) => {
-        if (
-          child.type !== "Identifier" ||
-          child.name !== functionName ||
-          !isIdentifierReference(child, parent)
-        ) {
-          return;
-        }
-
-        const directReference =
-          child === argument;
-
-        relationships.push({
-          functionName,
-          relationshipType:
-            "ast-express-route-reference",
-          role: directReference
-            ? "middleware-or-handler"
-            : "nested-route-reference",
-          argumentPosition: argumentIndex,
-          method: route.method,
-          routePath: route.routePath,
-          line: child.loc.start.line,
-          column: child.loc.start.column,
-          endLine: child.loc.end.line,
-          endColumn: child.loc.end.column,
-          matchedCode: source.slice(
-            child.start,
-            child.end
-          )
-        });
-      });
+      collectReferences(
+        argument,
+        route,
+        argumentIndex,
+        argument
+      );
     }
   });
 
