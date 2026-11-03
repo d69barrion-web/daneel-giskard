@@ -3437,6 +3437,9 @@ app.get(
   }
 );
 
+// =========================================
+// RELATIONSHIP MAPPING v4.0 ENDPOINT
+// =========================================
 app.get(
   "/admin/code-relationships-v4",
   requireAuth,
