@@ -2708,6 +2708,27 @@ relationshipTestButton.addEventListener(
   testRelationshipMapping
 );
 
+// LINE RANGE READER BUTTON
+const lineRangeReaderButton =
+  document.createElement("button");
+
+lineRangeReaderButton.type = "button";
+lineRangeReaderButton.className =
+  codeSearchButton.className;
+
+lineRangeReaderButton.textContent =
+  "📄 Line Range Reader";
+
+relationshipTestButton.insertAdjacentElement(
+  "afterend",
+  lineRangeReaderButton
+);
+
+lineRangeReaderButton.addEventListener(
+  "click",
+  testLineRangeReader
+);
+
 // SEARCH BUTTON
 codeSearchButton.addEventListener(
   "click",
