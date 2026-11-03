@@ -2669,6 +2669,88 @@ async function testLineRangeReader() {
   }
 }
 
+async function testAcornParser() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  acornParserTestButton.disabled = true;
+  acornParserTestButton.textContent = "Parsing...";
+
+  explorerInfo.textContent =
+    "Testing Acorn JavaScript parser...";
+
+  explorerOutput.textContent =
+    "Reading and parsing server.js...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/code-parser-test`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    if (!data.success || !data.parseSuccess) {
+      throw new Error("Acorn parsing was not successful.");
+    }
+
+    explorerInfo.textContent =
+      `${data.parser} | ` +
+      `${data.astNodeCount} AST nodes | ` +
+      `${data.sourceLines} source lines`;
+
+    let output =
+      `DANEEL ACORN PARSER DIAGNOSTIC v${data.diagnosticVersion}\n` +
+      "========================================\n\n" +
+      `PARSER: ${data.parser}\n` +
+      `FILE: ${data.filename}\n` +
+      `READ ONLY: ${data.readOnly}\n` +
+      `PARSE SUCCESS: ${data.parseSuccess}\n` +
+      `ECMASCRIPT VERSION: ${data.ecmaVersion}\n` +
+      `SOURCE TYPE: ${data.sourceType}\n` +
+      `SOURCE BYTES: ${data.sourceBytes}\n` +
+      `SOURCE LINES: ${data.sourceLines}\n` +
+      `AST NODE COUNT: ${data.astNodeCount}\n` +
+      `SHA-256: ${data.sourceSHA256}\n\n` +
+      "AST NODE TYPES\n" +
+      "========================================\n\n";
+
+    Object.entries(data.nodeTypes || {})
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([type, count]) => {
+        output += `${type}: ${count}\n`;
+      });
+
+    explorerOutput.textContent = output;
+
+  } catch (error) {
+    explorerInfo.textContent =
+      "Acorn Parser Test failed.";
+
+    explorerOutput.textContent =
+      "ERROR:\n\n" + error.message;
+
+  } finally {
+    acornParserTestButton.disabled = false;
+    acornParserTestButton.textContent =
+      "🌳 Acorn Parser Test";
+  }
+}
+
 // Gumawa ng bagong button katabi ng Search button.
 const functionTestButton = document.createElement("button");
 
