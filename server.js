@@ -2773,6 +2773,32 @@ app.get(
 // kung saan ginagamit ang target function.
 function findFunctionRelationships(source, functionName) {
   const masked = maskJavaScriptNonCode(source);
+  const routeMarkers = [
+  '"/admin/code-index"',
+  '"/admin/source-files"',
+  '"/admin/code-search"',
+  '"/admin/code-function"',
+  '"/admin/code-relationships"',
+  '"/admin/source-files/:filename"'
+];
+
+for (const marker of routeMarkers) {
+  const position = source.indexOf(marker);
+
+  console.log("MASK CHECK:", {
+    marker,
+    foundInSource: position !== -1,
+    foundInMasked:
+      position !== -1 &&
+      masked.slice(position, position + marker.length) === marker,
+    original: position !== -1
+      ? source.slice(position, position + 100)
+      : "NOT FOUND",
+    masked: position !== -1
+      ? masked.slice(position, position + 100)
+      : "NOT FOUND"
+  });
+}
   console.log(
   "RELATIONSHIP DIAGNOSTIC:",
   {
