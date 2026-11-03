@@ -2854,26 +2854,6 @@ async function testCodeRelationshipsV4() {
   }
 }
 
-// RELATIONSHIP MAPPING V4 BUTTON
-const relationshipMappingV4Button =
-  document.createElement("button");
-
-relationshipMappingV4Button.type = "button";
-relationshipMappingV4Button.className =
-  codeSearchButton.className;
-
-relationshipMappingV4Button.textContent =
-  "🔗 Relationship Mapping v4.0";
-
-acornParserTestButton.insertAdjacentElement(
-  "afterend",
-  relationshipMappingV4Button
-);
-
-relationshipMappingV4Button.addEventListener(
-  "click",
-  testCodeRelationshipsV4
-);
 
 // Gumawa ng bagong button katabi ng Search button.
 const functionTestButton = document.createElement("button");
@@ -2956,6 +2936,27 @@ acornParserTestButton.addEventListener(
   testAcornParser
 );
   
+  // RELATIONSHIP MAPPING V4 BUTTON
+const relationshipMappingV4Button =
+  document.createElement("button");
+
+relationshipMappingV4Button.type = "button";
+relationshipMappingV4Button.className =
+  codeSearchButton.className;
+
+relationshipMappingV4Button.textContent =
+  "🔗 Relationship Mapping v4.0";
+
+acornParserTestButton.insertAdjacentElement(
+  "afterend",
+  relationshipMappingV4Button
+);
+
+relationshipMappingV4Button.addEventListener(
+  "click",
+  testCodeRelationshipsV4
+);
+
 // SEARCH BUTTON
 codeSearchButton.addEventListener(
   "click",
