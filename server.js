@@ -3632,6 +3632,85 @@ app.get(
   }
 );
 
+// =========================================
+// RELATIONSHIP MAPPING v4.1 ENDPOINT
+// =========================================
+app.get(
+  "/admin/code-relationships-v4-1",
+  requireAuth,
+  requireSourceAdmin,
+  async (req, res) => {
+    try {
+      const functionName = String(
+        req.query.name || ""
+      ).trim();
+
+      if (
+        !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(functionName)
+      ) {
+        return res.status(400).json({
+          error: "Maglagay ng valid na JavaScript function name."
+        });
+      }
+
+      const file = await inspectSourceFile("server.js");
+
+      // Find function definition.
+      const definitions =
+        findFunctionDefinitionAST(
+          file.content,
+          functionName
+        );
+
+      // Find Express route references.
+      const relationships =
+        findFunctionRelationshipsAST(
+          file.content,
+          functionName
+        );
+
+      return res.json({
+        success: true,
+        readOnly: true,
+        retrievalVersion: "4.1",
+        method: "acorn-ast-function-definition-and-relationship-scan",
+        parser: "Acorn",
+
+        functionName,
+        filename: file.filename,
+
+        sourceBytes: file.bytes,
+        sourceLines: file.lines,
+        sourceSHA256: file.sha256,
+
+        definitionCount: definitions.length,
+        definitions,
+
+        relationshipCount: relationships.length,
+        relationships
+      });
+
+    } catch (error) {
+      console.error(
+        "Relationship Mapping v4.1 error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        readOnly: true,
+        error: "Hindi nagawa ang AST Relationship Mapping v4.1.",
+        details: error.message,
+        line: error.loc?.line || null,
+        column: error.loc?.column ?? null
+      });
+    }
+  }
+);
+
+//=================================
+// Acorn Parser Diagnostic endpoint
+//=================================
 app.get(
   "/admin/code-parser-test",
   requireAuth,
