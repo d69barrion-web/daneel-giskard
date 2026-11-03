@@ -3097,7 +3097,13 @@ app.get(
 
       for (const filename of Object.keys(SOURCE_FILE_URLS)) {
         const file = await inspectSourceFile(filename);
-
+        
+        console.log("SCANNING RELATIONSHIP FILE:", {
+    filename,
+    bytes: file.bytes,
+    lines: file.lines
+  });
+        
         const found = findFunctionRelationships(
           file.content,
           functionName
