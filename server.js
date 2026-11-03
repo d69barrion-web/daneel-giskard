@@ -3368,6 +3368,139 @@ function findFunctionRelationshipsAST(source, functionName) {
   return relationships;
 }
 
+function findFunctionDefinitionAST(source, functionName) {
+  const ast = acorn.parse(source, {
+    ecmaVersion: "latest",
+    sourceType: "module",
+    locations: true
+  });
+
+  const definitions = [];
+  const seen = new WeakSet();
+
+  function isFunctionNode(node) {
+    return node &&
+      (
+        node.type === "FunctionDeclaration" ||
+        node.type === "FunctionExpression" ||
+        node.type === "ArrowFunctionExpression"
+      );
+  }
+
+  function visit(node, parent = null) {
+    if (!node || typeof node !== "object") return;
+
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        visit(item, parent);
+      }
+      return;
+    }
+
+    if (
+      typeof node.type !== "string" ||
+      seen.has(node)
+    ) {
+      return;
+    }
+
+    seen.add(node);
+
+    let definitionType = null;
+    let functionNode = null;
+    let matchedName = false;
+
+    // Named function declaration.
+    if (
+      node.type === "FunctionDeclaration" &&
+      node.id?.name === functionName
+    ) {
+      definitionType = "function-declaration";
+      functionNode = node;
+      matchedName = true;
+    }
+
+    // Function assigned to a variable.
+    if (
+      node.type === "VariableDeclarator" &&
+      node.id.type === "Identifier" &&
+      node.id.name === functionName &&
+      isFunctionNode(node.init)
+    ) {
+      definitionType =
+        node.init.type === "ArrowFunctionExpression"
+          ? "arrow-function"
+          : "function-expression";
+
+      functionNode = node.init;
+      matchedName = true;
+    }
+
+    // Function assigned directly to an identifier.
+    if (
+      node.type === "AssignmentExpression" &&
+      node.left.type === "Identifier" &&
+      node.left.name === functionName &&
+      isFunctionNode(node.right)
+    ) {
+      definitionType =
+        node.right.type === "ArrowFunctionExpression"
+          ? "assigned-arrow-function"
+          : "assigned-function-expression";
+
+      functionNode = node.right;
+      matchedName = true;
+    }
+
+    if (matchedName && functionNode) {
+      definitions.push({
+        functionName,
+        definitionType,
+        parameters: functionNode.params.map(param =>
+          source.slice(param.start, param.end)
+        ),
+        startLine: node.loc.start.line,
+        startColumn: node.loc.start.column,
+        endLine: functionNode.loc.end.line,
+        endColumn: functionNode.loc.end.column,
+        sourceStart: node.start,
+        sourceEnd: functionNode.end,
+        sourceCode: source.slice(
+          node.start,
+          functionNode.end
+        )
+      });
+    }
+
+    for (const [key, value] of Object.entries(node)) {
+      if (
+        key === "loc" ||
+        key === "start" ||
+        key === "end"
+      ) {
+        continue;
+      }
+
+      if (Array.isArray(value)) {
+        for (const child of value) {
+          if (child && typeof child.type === "string") {
+            visit(child, node);
+          }
+        }
+      } else if (
+        value &&
+        typeof value.type === "string"
+      ) {
+        visit(value, node);
+      }
+    }
+  }
+
+  visit(ast);
+
+  return definitions;
+}
+
 // =========================================
 // RELATIONSHIP MAPPING ENDPOINT v3
 // =========================================
