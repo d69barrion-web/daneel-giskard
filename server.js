@@ -2590,69 +2590,292 @@ app.get(
 // Ginagawang spaces ang comments at strings
 // para hindi mapagkamalang JavaScript code.
 function maskJavaScriptNonCode(source) {
+
+function maskJavaScriptNonCode(source) {
   const chars = source.split("");
+
   let state = "code";
   let escaped = false;
+  let inRegexCharacterClass = false;
+
+  // Tinutukoy kung maaaring magsimula ang regex literal
+  // batay sa naunang token.
+  let canStartRegex = true;
+
+  const regexPrefixKeywords = new Set([
+    "return",
+    "throw",
+    "case",
+    "delete",
+    "void",
+    "typeof",
+    "instanceof",
+    "in",
+    "of",
+    "yield",
+    "await",
+    "new",
+    "else",
+    "do"
+  ]);
+
+  function blank(position) {
+    if (
+      source[position] !== "\n" &&
+      source[position] !== "\r"
+    ) {
+      chars[position] = " ";
+    }
+  }
 
   for (let i = 0; i < source.length; i++) {
     const ch = source[i];
     const next = source[i + 1];
 
+    // =====================================
+    // CODE STATE
+    // =====================================
     if (state === "code") {
-      if (ch === "'" ) {
+
+      // Single-quoted string
+      if (ch === "'") {
         state = "single";
-        chars[i] = " ";
-      } else if (ch === '"') {
-        state = "double";
-        chars[i] = " ";
-      } else if (ch === "`") {
-        state = "template";
-        chars[i] = " ";
-      } else if (ch === "/" && next === "/") {
-        state = "lineComment";
-        chars[i] = " ";
-        chars[i + 1] = " ";
-        i++;
-      } else if (ch === "/" && next === "*") {
-        state = "blockComment";
-        chars[i] = " ";
-        chars[i + 1] = " ";
-        i++;
-      }
-    } else {
-      if (ch !== "\n" && ch !== "\r") {
-        chars[i] = " ";
+        escaped = false;
+        blank(i);
+        canStartRegex = false;
+        continue;
       }
 
-      if (state === "lineComment") {
-        if (ch === "\n" || ch === "\r") {
-          state = "code";
-        }
-      } else if (state === "blockComment") {
-        if (ch === "*" && next === "/") {
-          chars[i + 1] = " ";
-          i++;
-          state = "code";
-        }
-      } else {
-        if (escaped) {
-          escaped = false;
-        } else if (ch === "\\") {
-          escaped = true;
-        } else if (
-          (state === "single" && ch === "'") ||
-          (state === "double" && ch === '"') ||
-          (state === "template" && ch === "`")
+      // Double-quoted string
+      if (ch === '"') {
+        state = "double";
+        escaped = false;
+        blank(i);
+        canStartRegex = false;
+        continue;
+      }
+
+      // Template literal
+      if (ch === "`") {
+        state = "template";
+        escaped = false;
+        blank(i);
+        canStartRegex = false;
+        continue;
+      }
+
+      // Line comment
+      if (ch === "/" && next === "/") {
+        state = "lineComment";
+        blank(i);
+        blank(i + 1);
+        i++;
+        continue;
+      }
+
+      // Block comment
+      if (ch === "/" && next === "*") {
+        state = "blockComment";
+        blank(i);
+        blank(i + 1);
+        i++;
+        continue;
+      }
+
+      // Regular expression literal
+      if (ch === "/" && canStartRegex) {
+        state = "regex";
+        escaped = false;
+        inRegexCharacterClass = false;
+        blank(i);
+        continue;
+      }
+
+      // Whitespace does not change token context.
+      if (/\s/.test(ch)) {
+        continue;
+      }
+
+      // Identifier or keyword
+      if (/[A-Za-z_$]/.test(ch)) {
+        let word = ch;
+        let j = i + 1;
+
+        while (
+          j < source.length &&
+          /[A-Za-z0-9_$]/.test(source[j])
         ) {
-          state = "code";
+          word += source[j];
+          j++;
         }
+
+        canStartRegex =
+          regexPrefixKeywords.has(word);
+
+        i = j - 1;
+        continue;
+      }
+
+      // Number literal
+      if (/[0-9]/.test(ch)) {
+        let j = i + 1;
+
+        while (
+          j < source.length &&
+          /[A-Za-z0-9_.]/.test(source[j])
+        ) {
+          j++;
+        }
+
+        canStartRegex = false;
+        i = j - 1;
+        continue;
+      }
+
+      // Opening delimiters and operators
+      if ("([{,;:?=!*%&|^~<>+-".includes(ch)) {
+        canStartRegex = true;
+        continue;
+      }
+
+      // Closing delimiters
+      if (")] }".replace(/\s/g, "").includes(ch)) {
+        canStartRegex = false;
+        continue;
+      }
+
+      // Dot / optional chaining
+      if (ch === ".") {
+        canStartRegex = false;
+        continue;
+      }
+
+      // Division operator
+      if (ch === "/") {
+        canStartRegex = true;
+        continue;
+      }
+
+      canStartRegex = false;
+      continue;
+    }
+
+    // =====================================
+    // SINGLE / DOUBLE STRING
+    // =====================================
+    if (
+      state === "single" ||
+      state === "double"
+    ) {
+      blank(i);
+
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (
+        (state === "single" && ch === "'") ||
+        (state === "double" && ch === '"')
+      ) {
+        state = "code";
+      }
+
+      continue;
+    }
+
+    // =====================================
+    // TEMPLATE LITERAL
+    // =====================================
+    if (state === "template") {
+      blank(i);
+
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === "`") {
+        state = "code";
+      }
+
+      continue;
+    }
+
+    // =====================================
+    // LINE COMMENT
+    // =====================================
+    if (state === "lineComment") {
+      blank(i);
+
+      if (ch === "\n" || ch === "\r") {
+        state = "code";
+      }
+
+      continue;
+    }
+
+    // =====================================
+    // BLOCK COMMENT
+    // =====================================
+    if (state === "blockComment") {
+      blank(i);
+
+      if (ch === "*" && next === "/") {
+        blank(i + 1);
+        i++;
+        state = "code";
+      }
+
+      continue;
+    }
+
+    // =====================================
+    // REGULAR EXPRESSION
+    // =====================================
+    if (state === "regex") {
+      blank(i);
+
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+
+      if (ch === "\\") {
+        escaped = true;
+        continue;
+      }
+
+      if (ch === "[") {
+        inRegexCharacterClass = true;
+        continue;
+      }
+
+      if (ch === "]") {
+        inRegexCharacterClass = false;
+        continue;
+      }
+
+      if (ch === "/" && !inRegexCharacterClass) {
+        // Isara ang regex literal.
+        // Kasama sa masking ang flags nito.
+        let j = i + 1;
+
+        while (
+          j < source.length &&
+          /[A-Za-z]/.test(source[j])
+        ) {
+          blank(j);
+          j++;
+        }
+
+        i = j - 1;
+        state = "code";
+        canStartRegex = false;
       }
     }
   }
 
   return chars.join("");
 }
-
 
 // Hinahanap ang katumbas na closing parenthesis.
 function findMatchingParenthesis(masked, openPosition) {
