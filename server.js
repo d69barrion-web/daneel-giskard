@@ -3408,7 +3408,7 @@ function findFunctionDefinitionAST(source, functionName) {
 
     let definitionType = null;
     let functionNode = null;
-    let matchedName = false;
+    let sourceNode = null;
 
     // Named function declaration.
     if (
@@ -3417,7 +3417,7 @@ function findFunctionDefinitionAST(source, functionName) {
     ) {
       definitionType = "function-declaration";
       functionNode = node;
-      matchedName = true;
+      sourceNode = node;
     }
 
     // Function assigned to a variable.
@@ -3433,7 +3433,12 @@ function findFunctionDefinitionAST(source, functionName) {
           : "function-expression";
 
       functionNode = node.init;
-      matchedName = true;
+
+      // Include the variable declaration, such as "const".
+      sourceNode =
+        parent?.type === "VariableDeclaration"
+          ? parent
+          : node;
     }
 
     // Function assigned directly to an identifier.
@@ -3449,25 +3454,30 @@ function findFunctionDefinitionAST(source, functionName) {
           : "assigned-function-expression";
 
       functionNode = node.right;
-      matchedName = true;
+      sourceNode = node;
     }
 
-    if (matchedName && functionNode) {
+    if (functionNode && sourceNode) {
       definitions.push({
         functionName,
         definitionType,
+
         parameters: functionNode.params.map(param =>
           source.slice(param.start, param.end)
         ),
-        startLine: node.loc.start.line,
-        startColumn: node.loc.start.column,
-        endLine: functionNode.loc.end.line,
-        endColumn: functionNode.loc.end.column,
-        sourceStart: node.start,
-        sourceEnd: functionNode.end,
+
+        startLine: sourceNode.loc.start.line,
+        startColumn: sourceNode.loc.start.column,
+
+        endLine: sourceNode.loc.end.line,
+        endColumn: sourceNode.loc.end.column,
+
+        sourceStart: sourceNode.start,
+        sourceEnd: sourceNode.end,
+
         sourceCode: source.slice(
-          node.start,
-          functionNode.end
+          sourceNode.start,
+          sourceNode.end
         )
       });
     }
