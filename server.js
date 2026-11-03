@@ -3838,12 +3838,17 @@ app.post(
       }
 
       // =====================================
-      // SOURCE RETRIEVAL
+      // SOURCE RETRIEVAL v1.1
+      // Phrase Matching + Scoring + Deduplication
       // =====================================
 
       const file = await inspectSourceFile("server.js");
-
       const lines = file.content.split(/\r\n|\n|\r/);
+
+      const normalizedQuestion = question
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
 
       const stopWords = new Set([
         "ang", "ng", "mga", "sa", "at", "ay",
@@ -3851,9 +3856,23 @@ app.post(
         "the", "and", "for", "from", "with",
         "what", "how", "does", "this", "that",
         "are", "is", "was", "were", "can",
-        "code", "function", "file", "please"
+        "code", "function", "file", "please",
+        "dito", "iyon", "iyan", "ito", "siya",
+        "ginagamit", "ginagawa", "tungkol"
       ]);
 
+      // Kunin ang route paths at quoted phrases.
+      const phrases = [
+        ...new Set([
+          ...(question.match(/\/[A-Za-z0-9_/:.-]+/g) || []),
+          ...(question.match(/["'`]([^"'`]{2,100})["'`]/g) || [])
+            .map(value => value.slice(1, -1))
+        ])
+      ]
+        .map(value => value.toLowerCase().trim())
+        .filter(value => value.length >= 2);
+
+      // Kunin ang searchable keywords.
       const keywords = [
         ...new Set(
           question
@@ -3864,63 +3883,118 @@ app.post(
               !stopWords.has(word)
             ) || []
         )
-      ].slice(0, 12);
+      ].slice(0, 15);
 
-      if (keywords.length === 0) {
+      if (keywords.length === 0 && phrases.length === 0) {
         return res.status(400).json({
           success: false,
           readOnly: true,
-          error: "Walang makilalang search keywords sa tanong."
+          error: "Walang makilalang search terms sa tanong."
         });
       }
 
+      // Score bawat source line.
       const candidates = [];
 
       for (let i = 0; i < lines.length; i++) {
         const currentLine = lines[i].toLowerCase();
 
-        const matchedKeywords = keywords.filter(
-          keyword => currentLine.includes(keyword)
+        const matchedKeywords = keywords.filter(keyword =>
+          currentLine.includes(keyword)
         );
 
-        if (matchedKeywords.length === 0) {
+        const matchedPhrases = phrases.filter(phrase =>
+          currentLine.includes(phrase)
+        );
+
+        let score = matchedKeywords.length;
+
+        // Mas mataas ang bigat ng eksaktong phrase match.
+        score += matchedPhrases.length * 8;
+
+        if (score === 0) {
           continue;
         }
 
         candidates.push({
           line: i + 1,
-          score: matchedKeywords.length,
+          score,
           matchedKeywords,
-          start: Math.max(0, i - 3),
-          end: Math.min(lines.length, i + 4)
+          matchedPhrases,
+          start: Math.max(0, i - 4),
+          end: Math.min(lines.length, i + 5)
         });
       }
 
-      // Pinakamataas ang priority ng maraming keyword matches.
+      // Unahin ang pinakamataas ang relevance score.
       candidates.sort((a, b) =>
         b.score - a.score || a.line - b.line
       );
 
-      // Limitahan ang retrieved evidence.
+      // Pumili ng pinakamataas ang score.
       const selected = candidates.slice(0, 35);
 
+      // Ibalik sa original source order.
+      selected.sort((a, b) => a.start - b.start);
+
+      // Pagsamahin ang magkakapatong na source ranges.
+      const mergedRanges = [];
+
+      for (const item of selected) {
+        const previous = mergedRanges[
+          mergedRanges.length - 1
+        ];
+
+        if (previous && item.start <= previous.end) {
+          previous.end = Math.max(
+            previous.end,
+            item.end
+          );
+
+          previous.matches.push(item);
+        } else {
+          mergedRanges.push({
+            start: item.start,
+            end: item.end,
+            matches: [item]
+          });
+        }
+      }
+
+      // Ihanda ang evidence para sa AI.
       let evidence = "";
       let includedCount = 0;
 
-      for (const item of selected) {
+      for (const range of mergedRanges) {
         const excerpt = [];
 
-        for (let i = item.start; i < item.end; i++) {
-          excerpt.push(
-            `${i + 1} | ${lines[i]}`
-          );
+        for (
+          let i = range.start;
+          i < range.end;
+          i++
+        ) {
+          excerpt.push(`${i + 1} | ${lines[i]}`);
         }
+
+        const matchedLines = range.matches
+          .map(item => item.line)
+          .join(", ");
+
+        const matchedTerms = [
+          ...new Set(
+            range.matches.flatMap(item => [
+              ...item.matchedKeywords,
+              ...item.matchedPhrases
+            ])
+          )
+        ];
 
         const block =
           `\n--- SOURCE EXCERPT ---\n` +
           `FILE: ${file.filename}\n` +
-          `MATCHED LINE: ${item.line}\n` +
-          `MATCHED KEYWORDS: ${item.matchedKeywords.join(", ")}\n` +
+          `MATCHED LINES: ${matchedLines}\n` +
+          `MATCHED TERMS: ${matchedTerms.join(", ")}\n` +
+          `SOURCE RANGE: ${range.start + 1}-${range.end}\n` +
           `${excerpt.join("\n")}\n`;
 
         if (evidence.length + block.length > 28000) {
@@ -3931,10 +4005,20 @@ app.post(
         includedCount++;
       }
 
+      // Huwag magpatuloy kung walang source evidence.
       if (!evidence) {
-        evidence = "Walang matching source excerpts na nakuha.";
+        return res.status(404).json({
+          success: false,
+          readOnly: true,
+          error: "Walang sapat na matching source evidence.",
+          retrieval: {
+            keywords,
+            phrases,
+            totalMatches: candidates.length
+          }
+        });
       }
-
+      
       // =====================================
       // AI CODE ANALYSIS
       // =====================================
@@ -4035,12 +4119,15 @@ Be precise, skeptical, and transparent.
         },
 
         retrieval: {
-          keywords,
-          totalMatches: candidates.length,
-          includedExcerpts: includedCount,
-          maximumExcerpts: 35,
-          maximumEvidenceCharacters: 28000
-        },
+  keywords,
+  phrases,
+  totalMatches: candidates.length,
+  selectedMatches: selected.length,
+  mergedSourceRanges: mergedRanges.length,
+  includedExcerpts: includedCount,
+  maximumMatches: 35,
+  maximumEvidenceCharacters: 28000
+},
 
         analysis: response.output_text
       });
