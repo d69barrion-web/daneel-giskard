@@ -2549,6 +2549,126 @@ async function testRelationshipMapping() {
   }
 }
 
+async function testLineRangeReader() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  const filename = prompt(
+    "Anong file ang babasahin?\n\nserver.js\nindex.html\npackage.json",
+    "server.js"
+  );
+
+  if (!filename) return;
+
+  if (!["server.js", "index.html", "package.json"].includes(filename)) {
+    alert("Hindi pinapayagang basahin ang file na iyan.");
+    return;
+  }
+
+  const start = Number(prompt(
+    "Starting line:",
+    "2080"
+  ));
+
+  if (!Number.isInteger(start) || start < 1) {
+    alert("Invalid starting line.");
+    return;
+  }
+
+  const end = Number(prompt(
+    "Ending line:",
+    "2326"
+  ));
+
+  if (
+    !Number.isInteger(end) ||
+    end < start ||
+    end - start + 1 > 500
+  ) {
+    alert("Invalid line range. Maximum 500 lines.");
+    return;
+  }
+
+  lineRangeReaderButton.disabled = true;
+  lineRangeReaderButton.textContent = "Loading...";
+
+  explorerInfo.textContent =
+    `Reading ${filename}: lines ${start}-${end}`;
+
+  explorerOutput.textContent =
+    "Retrieving source code...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const params = new URLSearchParams({
+      filename,
+      start: String(start),
+      end: String(end)
+    });
+
+    const response = await fetch(
+      `${baseURL}/admin/code-range?${params.toString()}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    if (!Array.isArray(data.results)) {
+      throw new Error("Invalid Line Range Reader response.");
+    }
+
+    explorerInfo.textContent =
+      `${data.filename} | ` +
+      `Lines ${data.returnedStart}-${data.returnedEnd} | ` +
+      `${data.returnedLines} lines retrieved`;
+
+    let output =
+      `DANEEL LINE RANGE READER v${data.retrievalVersion}\n` +
+      "========================================\n\n" +
+      `FILE: ${data.filename}\n` +
+      `METHOD: ${data.method}\n` +
+      `READ ONLY: ${data.readOnly}\n` +
+      `TOTAL FILE LINES: ${data.totalFileLines}\n` +
+      `REQUESTED RANGE: ${data.requestedStart}-${data.requestedEnd}\n` +
+      `RETURNED RANGE: ${data.returnedStart}-${data.returnedEnd}\n` +
+      `LINES RETRIEVED: ${data.returnedLines}\n\n` +
+      "SOURCE CODE\n" +
+      "========================================\n\n";
+
+    data.results.forEach(item => {
+      output +=
+        `${String(item.line).padStart(5, " ")} | ${item.code}\n`;
+    });
+
+    explorerOutput.textContent = output;
+
+  } catch (error) {
+    explorerInfo.textContent =
+      "Line Range Reader failed.";
+
+    explorerOutput.textContent =
+      "ERROR:\n\n" + error.message;
+
+  } finally {
+    lineRangeReaderButton.disabled = false;
+    lineRangeReaderButton.textContent =
+      "📄 Line Range Reader";
+  }
+}
+
 // Gumawa ng bagong button katabi ng Search button.
 const functionTestButton = document.createElement("button");
 
