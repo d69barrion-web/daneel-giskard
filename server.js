@@ -3141,6 +3141,91 @@ app.get(
   }
 );
 
+app.get(
+  "/admin/code-parser-test",
+  requireAuth,
+  requireSourceAdmin,
+  async (req, res) => {
+    try {
+      const file = await inspectSourceFile("server.js");
+
+      const ast = acorn.parse(file.content, {
+        ecmaVersion: "latest",
+        sourceType: "module",
+        locations: true
+      });
+
+      let nodeCount = 0;
+      const nodeTypes = {};
+
+      const stack = [ast];
+
+      while (stack.length > 0) {
+        const current = stack.pop();
+
+        if (!current || typeof current !== "object") {
+          continue;
+        }
+
+        if (typeof current.type === "string") {
+          nodeCount++;
+
+          nodeTypes[current.type] =
+            (nodeTypes[current.type] || 0) + 1;
+        }
+
+        for (const value of Object.values(current)) {
+          if (Array.isArray(value)) {
+            for (const item of value) {
+              if (item && typeof item === "object") {
+                stack.push(item);
+              }
+            }
+          } else if (
+            value &&
+            typeof value === "object" &&
+            typeof value.type === "string"
+          ) {
+            stack.push(value);
+          }
+        }
+      }
+
+      return res.json({
+        success: true,
+        readOnly: true,
+        diagnosticVersion: "1.0",
+        parser: "Acorn",
+        filename: file.filename,
+        sourceBytes: file.bytes,
+        sourceLines: file.lines,
+        sourceSHA256: file.sha256,
+        parseSuccess: true,
+        ecmaVersion: "latest",
+        sourceType: "module",
+        astNodeCount: nodeCount,
+        nodeTypes
+      });
+
+    } catch (error) {
+      console.error(
+        "Acorn Parser Diagnostic error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        readOnly: true,
+        parser: "Acorn",
+        parseSuccess: false,
+        error: error.message,
+        line: error.loc?.line || null,
+        column: error.loc?.column ?? null
+      });
+    }
+  }
+);
+
 // Basahin ang mismong laman ng isang source file.
 app.get(
   "/admin/source-files/:filename",
