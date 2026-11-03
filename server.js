@@ -2835,7 +2835,7 @@ function findFunctionRelationships(source, functionName) {
     let targetMatch;
 
     while (
-      (targetMatch = targetPattern.exec(maskedCall)) !== null
+      (targetMatch = targetPattern.exec(originalCall)) !== null
     ) {
       const absolutePosition =
         openParen + 1 + targetMatch.index;
