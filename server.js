@@ -5,6 +5,7 @@ import admin from "firebase-admin";
 import multer from "multer";
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
+import * as acorn from "acorn";
 
 const app = express();
 
