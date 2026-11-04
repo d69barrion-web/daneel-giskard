@@ -4088,8 +4088,9 @@ Be precise, skeptical, and transparent.
           sourceFile: file.filename,
           sourceSHA256: file.sha256,
           sourceLines: file.lines,
-          retrievalMethod: "keyword-context-search",
+          retrievalMethod: "phrase-matching-scoring-deduplication",
           searchKeywords: keywords,
+          searchPhrases: phrases,
           matchingExcerptCount: includedCount,
           evidence
         }),
