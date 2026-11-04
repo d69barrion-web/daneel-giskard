@@ -3865,7 +3865,7 @@ app.post(
 const phrases = [
   ...new Set([
     ...(question.match(/\/[A-Za-z0-9_/:.-]+/g) || []),
-    ...(question.match(/["'`]([^"'`]{2,100})["'`]/g) || [])
+    ...(question.match(/["'`][^"'`]{2,100}["'`]/g) || [])
       .map(value => value.slice(1, -1))
   ])
 ]
