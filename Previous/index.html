@@ -1,0 +1,4665 @@
+
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101827">
+<title>Daneel Giskard — Ang Kaibigan ni Daniel</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css"
+>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+
+  <style>
+:root {
+  --bg:#101827;
+  --panel:#182335;
+  --panel2:#202e42;
+  --line:#334155;
+  --text:#f1f5f9;
+  --muted:#9baec4;
+  --blue:#3b82f6;
+  --cyan:#93c5fd;
+  --green:#34d399;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+button,textarea { font:inherit; }
+button { cursor:pointer; touch-action:manipulation; }
+button:focus-visible,textarea:focus-visible {
+  outline:2px solid var(--cyan);
+  outline-offset:2px;
+}
+.app {
+  height:100vh;
+  height:100dvh;
+  max-width:1100px;
+  margin:auto;
+  display:flex;
+  flex-direction:column;
+}
+header {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px 16px;
+  background:var(--panel);
+  border-bottom:1px solid var(--line);
+}
+.logo {
+  width:48px;
+  height:48px;
+  flex-shrink:0;
+  border-radius:16px;
+  display:grid;
+  place-items:center;
+  font-size:26px;
+  color:white;
+  background:linear-gradient(145deg,#2563eb,#164e91);
+  box-shadow:0 0 24px #2563eb30;
+}
+.brand { flex:1;min-width:0; }
+.brand h1 { font-size:18px;margin:0 0 5px; }
+.brand p { margin:0;color:var(--cyan);font-size:12px; }
+.top-actions { display:flex;gap:7px; }
+.small-btn {
+  border:1px solid var(--line);
+  background:var(--panel2);
+  color:var(--text);
+  padding:10px;
+  border-radius:11px;
+  font-size:13px;
+}
+.workspace {
+  flex:1;
+  min-height:0;
+  display:flex;
+  overflow:hidden;
+}
+.sidebar {
+  width:245px;
+  flex-shrink:0;
+  padding:16px 12px;
+  background:#131e2d;
+  border-right:1px solid var(--line);
+  overflow-y:auto;
+}
+.section-label {
+  font-size:11px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin:8px 8px 12px;
+}
+.new-btn {
+  width:100%;
+  border:1px solid #3b82f670;
+  border-radius:12px;
+  background:#1d4ed825;
+  color:var(--text);
+  padding:13px;
+  text-align:left;
+  margin-bottom:20px;
+}
+.history-item {
+  display:block;
+  width:100%;
+  border:1px solid transparent;
+  border-radius:10px;
+  padding:11px;
+  margin:4px 0;
+  background:transparent;
+  color:var(--muted);
+  text-align:left;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.history-item.active {
+  background:var(--panel2);
+  color:white;
+  border-color:var(--line);
+}
+.history-row {
+  display:flex;
+  align-items:center;
+  gap:4px;
+  width:100%;
+  min-width:0;
+  position:relative;
+}
+.history-row .history-item {
+  flex:1;
+  min-width:0;
+  width:auto;
+  margin:4px 0;
+}
+.history-menu-btn {
+  flex:0 0 32px;
+  width:32px;
+  height:38px;
+  border:1px solid transparent;
+  border-radius:8px;
+  background:transparent;
+  color:var(--muted);
+  font-size:20px;
+  cursor:pointer;
+}
+.history-menu-btn:hover {
+  background:var(--panel2);
+  color:white;
+}
+.history-dropdown {
+  position:absolute;
+  top:42px;
+  right:0;
+  z-index:100;
+  width:190px;
+  padding:5px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel);
+  box-shadow:0 8px 24px rgba(0,0,0,0.35);
+}
+.history-dropdown[hidden] {
+  display:none;
+}
+.history-dropdown-item {
+  display:block;
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:7px;
+  background:transparent;
+  color:var(--text);
+  text-align:left;
+  font-size:13px;
+  cursor:pointer;
+}
+.history-dropdown-item:hover {
+  background:var(--panel2);
+}
+.history-dropdown-item.delete-option {
+  color:#ff7777;
+}
+.sidebar-note {
+  margin-top:28px;
+  padding:13px;
+  border-radius:12px;
+  background:var(--panel);
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.6;
+}
+.main {
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+}
+.tabs {
+  display:flex;
+  gap:8px;
+  padding:12px 15px;
+  border-bottom:1px solid var(--line);
+  background:var(--bg);
+}
+.tab {
+  flex:1;
+  padding:11px 8px;
+  border:1px solid transparent;
+  border-radius:11px;
+  background:transparent;
+  color:var(--muted);
+  font-size:13px;
+}
+.tab.active {
+  color:white;
+  background:var(--panel2);
+  border-color:var(--line);
+}
+.view {
+  display:none;
+  flex:1;
+  min-height:0;
+}
+.view.active {
+  display:flex;
+  flex-direction:column;
+}
+#chat {
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+  padding:22px 17px;
+  scroll-behavior:smooth;
+  overscroll-behavior:contain;
+}
+.welcome {
+  max-width:440px;
+  margin:28px auto;
+  text-align:center;
+  padding:15px;
+}
+.welcome-icon {
+  width:76px;
+  height:76px;
+  margin:0 auto 18px;
+  display:grid;
+  place-items:center;
+  font-size:36px;
+  border-radius:25px;
+  background:linear-gradient(145deg,#233c60,#182335);
+  border:1px solid #43618b;
+}
+.welcome h2 { font-size:24px;margin:0 0 12px; }
+.welcome p {
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.7;
+}
+.suggestions {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:22px;
+}
+.suggestion {
+  background:var(--panel);
+  border:1px solid var(--line);
+  color:#dbeafe;
+  border-radius:12px;
+  padding:12px;
+  font-size:12px;
+  line-height:1.5;
+  text-align:left;
+}
+.message {
+  max-width:88%;
+  margin:0 0 19px;
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  box-sizing:border-box;
+}
+.message.user {
+  margin-left:auto;
+  align-items:flex-end;
+}
+.message.bot {
+  margin-right:auto;
+  align-items:flex-start;
+}
+.sender {
+  color:var(--muted);
+  font-size:11px;
+  margin:0 5px 6px;
+}
+.message .bubble {
+  padding:12px 15px;
+  border-radius:17px;
+  font-size:15px;
+  line-height:1.65;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}
+.user .bubble {
+  background:#2459ad;
+  border-bottom-right-radius:5px;
+}
+.bot .bubble {
+  background:var(--panel2);
+  border:1px solid #34445a;
+  border-bottom-left-radius:5px;
+}
+.assistant-text {
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+#message {
+  flex:1;
+  min-width:0;
+  min-height:48px;
+  max-height:130px;
+  resize:none;
+  border:1px solid var(--line);
+  border-radius:17px;
+  background:#101827;
+  color:white;
+  padding:14px;
+  font-size:16px;
+  line-height:1.4;
+}
+#message::placeholder { color:#8ca0b8; }
+#sendBtn {
+  min-width:49px;
+  height:49px;
+  border:0;
+  border-radius:16px;
+  background:var(--blue);
+  color:white;
+  font-size:23px;
+}
+#sendBtn:disabled {
+  opacity:.5;
+  cursor:wait;
+}
+.composer {
+  padding:12px 14px;
+  padding-bottom:max(12px,env(safe-area-inset-bottom));
+  background:var(--panel);
+  border-top:1px solid var(--line);
+}
+#inputArea {
+  display:flex;
+  align-items:flex-end;
+  gap:9px;
+  max-width:800px;
+  margin:auto;
+}
+.hint {
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.5;
+  text-align:center;
+  margin:9px 0 0;
+}
+.memory-view {
+  overflow-y:auto;
+  padding:18px;
+}
+.memory-heading {
+  margin:4px 0 8px;
+  font-size:21px;
+}
+.description {
+  font-size:13px;
+  line-height:1.7;
+  color:var(--muted);
+  margin:0 0 18px;
+}
+.memory-card {
+  padding:16px;
+  margin-bottom:13px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:var(--panel);
+}
+.memory-card h3 {
+  font-size:14px;
+  margin:0 0 9px;
+}
+.memory-card p {
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.65;
+  margin:0;
+}
+#notes {
+  width:100%;
+  min-height:130px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:var(--bg);
+  color:var(--text);
+  font-size:14px;
+  line-height:1.6;
+  resize:vertical;
+}
+.action-row {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+.primary-btn {
+  padding:11px 14px;
+  border:0;
+  border-radius:10px;
+  background:var(--blue);
+  color:white;
+}
+.secondary-btn {
+  padding:11px 14px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel2);
+  color:white;
+}
+#notice {
+  color:var(--green);
+  font-size:12px;
+  margin-top:10px;
+}
+.mobile-history {
+  display:none;
+}
+.settings-screen {
+  position:fixed;
+  inset:0;
+  z-index:1000;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  background:var(--bg);
+  padding:max(18px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+}
+.settings-screen[hidden] {
+  display:none;
+}
+.settings-container {
+  width:100%;
+  max-width:680px;
+  margin:0 auto;
+}
+.settings-header {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:8px 0 20px;
+  border-bottom:1px solid var(--line);
+  margin-bottom:20px;
+}
+.settings-header h2 { margin:0; font-size:21px; }
+.settings-back {
+  border:1px solid var(--line);
+  background:var(--panel2);
+  color:var(--text);
+  border-radius:11px;
+  padding:11px 14px;
+}
+.settings-card {
+  padding:18px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:var(--panel);
+}
+.settings-card h3 { margin:0 0 10px; }
+.settings-card p {
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.65;
+}
+.settings-card input {
+  width:100%;
+  box-sizing:border-box;
+  padding:13px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  margin:5px 0 12px;
+  background:var(--bg);
+  color:var(--text);
+  font-size:16px;
+}
+.icon-btn {
+  min-width:40px;
+  min-height:40px;
+  padding:8px 10px;
+  font-size:19px;
+}
+.daneel-modal {
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(0,0,0,0.65);
+}
+.daneel-modal[hidden] {
+  display:none;
+}
+.daneel-dialog {
+  width:100%;
+  max-width:360px;
+  padding:20px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--panel);
+  box-shadow:0 12px 35px rgba(0,0,0,0.4);
+}
+.daneel-dialog h3 {
+  margin:0 0 15px;
+  color:var(--text);
+  font-size:17px;
+}
+.daneel-dialog input {
+  width:100%;
+  box-sizing:border-box;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  outline:none;
+  background:var(--panel2);
+  color:var(--text);
+  font-size:15px;
+}
+.daneel-dialog-actions {
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:16px;
+}
+.daneel-dialog-actions button {
+  padding:9px 14px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:var(--panel2);
+  color:var(--text);
+  cursor:pointer;
+}
+.daneel-dialog-actions button.primary {
+  background:var(--blue);
+  color:white;
+}
+.feature-menu {
+  position:absolute;
+  bottom:58px;
+  left:0;
+  z-index:500;
+  width:245px;
+  padding:7px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--panel);
+  box-shadow:0 10px 30px rgba(0,0,0,.45);
+}
+.feature-menu[hidden],
+.feature-panel[hidden] {
+  display:none;
+}
+.feature-menu button {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  padding:13px 11px;
+  border:0;
+  border-radius:9px;
+  background:transparent;
+  color:var(--text);
+  text-align:left;
+  font-size:14px;
+}
+.feature-menu button:hover {
+  background:var(--panel2);
+}
+.feature-icon {
+  font-size:22px;
+}
+.feature-panel {
+  max-width:800px;
+  margin:0 auto 12px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:var(--bg);
+}
+.feature-panel h3 {
+  margin:0 0 10px;
+  font-size:15px;
+}
+.feature-panel textarea,
+.feature-panel input[type="file"] {
+  width:100%;
+  margin:5px 0 10px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel);
+  color:var(--text);
+  font-size:14px;
+}
+.feature-panel textarea {
+  min-height:75px;
+  resize:vertical;
+}
+.feature-panel-actions {
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
+}
+.feature-panel-actions button {
+  padding:9px 13px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:var(--panel2);
+  color:white;
+}
+.feature-panel-actions .feature-close {
+  background:transparent;
+}
+.image-result {
+  width:100%;
+  max-width:520px;
+  margin-top:10px;
+}
+.image-result img {
+  display:block;
+  width:100%;
+  height:auto;
+  border:1px solid var(--line);
+  border-radius:12px;
+}
+.image-download-btn {
+  display:inline-block;
+  margin-top:9px;
+  padding:10px 14px;
+  border:0;
+  border-radius:9px;
+  background:var(--blue);
+  color:white;
+  text-decoration:none;
+  font-size:13px;
+}
+.markdown-content {
+  white-space:normal;
+  overflow-wrap:anywhere;
+  line-height:1.6;
+}
+.markdown-content p {
+  margin:0 0 12px;
+}
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  margin:18px 0 10px;
+  line-height:1.3;
+}
+.markdown-content ul,
+.markdown-content ol {
+  padding-left:24px;
+  margin:8px 0 14px;
+}
+.markdown-content li {
+  margin:5px 0;
+}
+.markdown-content blockquote {
+  margin:12px 0;
+  padding:8px 14px;
+  border-left:3px solid #888;
+  background:rgba(128, 128, 128, 0.08);
+}
+.markdown-content a {
+  display:inline-block;
+  padding:2px 6px;
+  border-radius:6px;
+  background:#d1d5db;
+  color:#ffffff;
+  text-decoration:none;
+  overflow-wrap:anywhere;
+  border:1px solid #9ca3af;
+}
+.markdown-content a:hover {
+  background:#bfc5cc;
+  color:#ffffff;
+}
+.markdown-content a:visited {
+  color:#ffffff;
+}
+.markdown-content table {
+  display:block;
+  max-width:100%;
+  overflow-x:auto;
+  border-collapse:collapse;
+  margin:12px 0;
+}
+.markdown-content th,
+.markdown-content td {
+  border:1px solid #8886;
+  padding:8px 10px;
+  text-align:left;
+}
+.markdown-content th {
+  font-weight:bold;
+}
+.markdown-content :not(pre) > code {
+  padding:2px 5px;
+  border-radius:4px;
+  background:rgba(128, 128, 128, 0.18);
+  overflow-wrap:anywhere;
+}
+.markdown-content hr {
+  border:0;
+  border-top:1px solid #8886;
+  margin:16px 0;
+}
+.markdown-content > :last-child {
+  margin-bottom:0;
+}
+.code-block {
+  margin:12px 0;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  border:1px solid var(--line);
+  border-radius:10px;
+  overflow:hidden;
+  background:#0b1220;
+  box-sizing:border-box;
+}
+.code-toolbar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:9px 12px;
+  background:#172337;
+  border-bottom:1px solid var(--line);
+  color:var(--muted);
+  font-size:12px;
+  max-width:100%;
+  box-sizing:border-box;
+}
+.code-actions {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:6px;
+}
+.code-block pre {
+  margin:0;
+  padding:14px;
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow-x:auto;
+  box-sizing:border-box;
+  white-space:pre;
+  font-size:13px;
+  line-height:1.6;
+  color:#dce8f8;
+}
+.code-block code {
+  font-family:monospace;
+  white-space:pre;
+}
+.code-block pre code {
+  font-family:monospace;
+  white-space:pre;
+}
+.code-preview-frame {
+  display:block;
+  width:100%;
+  height:320px;
+  border:0;
+  border-top:1px solid var(--line);
+  background:white;
+}
+.code-preview-frame[hidden] {
+  display:none;
+}
+.code-actions button,
+.code-copy-btn,
+.code-preview-btn {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px 12px;
+  border:1px solid rgba(255, 255, 255, 0.2);
+  border-radius:6px;
+  background:#343a40;
+  color:#fff;
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  transition:background 0.2s ease;
+}
+.code-actions button:hover,
+.code-copy-btn:hover,
+.code-preview-btn:hover {
+  background:#505860;
+}
+.code-actions button:active,
+.code-copy-btn:active,
+.code-preview-btn:active {
+  transform:scale(0.97);
+}
+.message-copy-btn {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:30px;
+  height:30px;
+  margin-top:5px;
+  padding:0;
+  border:1px solid #52647a;
+  border-radius:8px;
+  background:transparent;
+  color:var(--text);
+  font-size:14px;
+  cursor:pointer;
+  opacity:0.65;
+  transition:0.2s ease;
+}
+.message-copy-btn:hover {
+  opacity:1;
+  background:var(--panel2);
+}
+.message-copy-btn:active {
+  transform:scale(0.92);
+}
+
+@media (max-width: 650px) {
+  header {
+    padding:11px 12px;
+    gap:9px;
+  }
+
+  .logo {
+    width:43px;
+    height:43px;
+    font-size:23px;
+  }
+
+  .brand h1 {
+    font-size:16px;
+  }
+
+  .brand p {
+    font-size:11px;
+  }
+
+  .top-actions .small-btn {
+    padding:9px 8px;
+    font-size:11px;
+  }
+
+  .sidebar {
+    display:none;
+  }
+
+  .mobile-history {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 12px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    position:relative;
+    z-index:100;
+    border-bottom:1px solid var(--line);
+    background:#131e2d;
+  }
+
+  #mobileNewConversation {
+    flex:0 0 auto;
+    width:auto;
+    min-width:150px;
+    max-width:170px;
+    white-space:nowrap;
+    font-size:13px;
+    padding:11px 12px;
+    border:1px solid #3b82f670;
+  border-radius:12px;
+  background:#1d4ed825;
+  color:var(--text);
+  }
+
+  .mobile-history .history-row {
+    display:flex;
+    align-items:center;
+    flex:0 0 auto;
+    width:auto;
+    min-width:0;
+    gap:4px;
+    margin:0;
+  }
+
+  .mobile-history .history-item {
+    flex:0 0 auto;
+    width:180px;
+    max-width:180px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    margin:0;
+  }
+
+  .mobile-history .history-menu-btn {
+    flex:0 0 38px;
+    width:38px;
+    min-width:38px;
+    padding:8px 0;
+  }
+
+  #chat {
+    padding:17px 12px;
+  }
+
+  .welcome {
+    margin:22px auto;
+    padding:8px;
+  }
+
+  .welcome h2 {
+    font-size:22px;
+  }
+
+  .suggestions {
+    grid-template-columns:1fr 1fr;
+  }
+
+  .message {
+    max-width:92%;
+  }
+
+  .message .bubble {
+    font-size:14px;
+    padding:11px 13px;
+  }
+
+  .tabs {
+    padding:9px 10px;
+    position:relative;
+    z-index:1;
+  }
+
+  .tab {
+    padding:10px 5px;
+    font-size:12px;
+  }
+
+  .memory-view {
+    padding:14px;
+  }
+}
+    /* Restore styling for + New Chat */
+.new-btn {
+  width: 100%;
+  border: 1px solid #3b82f670;
+  border-radius: 12px;
+  background: #1d4ed825;
+  color: var(--text);
+  padding: 13px;
+  text-align: left;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Restore styling for the + button beside composer */
+.plus-btn {
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel2);
+  color: white;
+  font-size: 27px;
+  display: grid;
+  place-items: center;
+}
+
+.plus-btn:hover,
+.plus-btn[aria-expanded="true"] {
+  background: #263d5c;
+  border-color: var(--blue);
+}
+
+/* Restore feature menu placement */
+.composer-tools {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.feature-menu {
+  position: absolute;
+  bottom: 58px;
+  left: 0;
+  z-index: 500;
+  width: 245px;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 10px 30px rgba(0,0,0,.45);
+}
+
+/* Link styling in replies */
+.markdown-content a {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: #d1d5db;
+  color: #000000;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  border: 1px solid #9ca3af;
+  line-height: 1.2;
+}
+
+.markdown-content a:hover {
+  background: #bfc5cc;
+  color: #000000;
+}
+
+.markdown-content a:visited {
+  color: #000000;
+}
+
+/* Make the link border/box a bit shorter */
+.markdown-content a {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+    /* Restore + New Chat button to send-button color */
+.new-btn {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: var(--blue);
+  color: white;
+  padding: 13px;
+  text-align: left;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.22);
+}
+
+.new-btn:hover {
+  background: #2563eb;
+}
+
+.new-btn:active {
+  transform: scale(0.99);
+}
+    
+/* =====================================
+   DANЕEL - CHATGPT STYLE COMPOSER
+   ===================================== */
+
+.composer {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Main unified composer container */
+#inputArea {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+#inputArea:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(70, 145, 255, .12);
+}
+
+/* Plus button area */
+.composer-tools {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+.plus-btn {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: white;
+  font-size: 30px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+.plus-btn:hover,
+.plus-btn[aria-expanded="true"] {
+  background: var(--panel2);
+}
+
+/* Message input */
+#message {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  max-height: 180px;
+  margin: 0;
+  padding: 10px 2px;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow-y: auto;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+#message::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+/* Send button */
+#sendBtn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--blue);
+  color: white;
+  font-size: 27px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: filter .2s, transform .2s;
+}
+
+#sendBtn:hover {
+  filter: brightness(1.12);
+}
+
+#sendBtn:active {
+  transform: scale(.94);
+}
+
+/* Floating feature menu */
+.feature-menu {
+  position: absolute;
+  bottom: 54px;
+  left: 0;
+  z-index: 500;
+  width: 245px;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: 0 10px 30px rgba(0,0,0,.45);
+  box-sizing: border-box;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  #inputArea {
+    gap: 7px;
+    padding: 8px 9px;
+    border-radius: 27px;
+  }
+
+  .plus-btn {
+    width: 40px;
+    height: 42px;
+  }
+
+  #message {
+    font-size: 16px;
+  }
+
+  #sendBtn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+   
+</style>
+</head>
+
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo">✦</div>
+    <div class="brand">
+      <h1>Daneel Giskard</h1>
+      <p id="status">● Ang Kaibigan ni Daniel</p>
+    </div>
+    <div class="top-actions">
+  <button class="small-btn" id="googleSignInBtn">
+    Mag-sign in sa Google
+  </button>
+  <button class="small-btn" id="exportBtn">Backup ↓</button>
+  <button class="small-btn icon-btn" id="settingsBtn"
+    aria-label="Buksan ang Settings" title="Settings">⚙</button>
+</div>
+  </header>
+
+  <div class="workspace">
+
+    <aside class="sidebar">
+      <button class="new-btn" id="newChatBtn">＋ New Chat</button>
+      <div class="section-label">Mga nakaraang usapan</div>
+      <div id="history"></div>
+
+      <div class="sidebar-note">
+        <strong>Ang layunin ni Daneel</strong><br>
+        Kilalanin ka sa pamamagitan ng mga tunay ninyong pag-uusap,
+        at panatilihin ang pagkakaiba ng alaala at hinuha.
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="mobile-history" id="mobileHistory">
+  <button type="button" id="mobileNewConversation">
+    ＋ New Chat
+  </button>
+</div>
+
+      <nav class="tabs">
+        <button class="tab active" data-view="chatView">💬 Usapan</button>
+        <button class="tab" data-view="memoryView">🧠 Pagkakakilala</button>
+      </nav>
+
+      
+
+      
+
+      <section class="view active" id="chatView">
+        <div id="chat"></div>
+
+        <div class="composer">
+
+  <!-- Feature controls -->
+  <div id="featurePanel" class="feature-panel" hidden>
+    <h3 id="featureTitle"></h3>
+
+    <div id="featureContent"></div>
+
+    <div class="feature-panel-actions">
+      <button type="button" class="feature-close"
+        id="closeFeatureBtn">Kanselahin</button>
+    </div>
+  </div>
+
+  <div id="inputArea">
+
+    <!-- Plus button and floating menu -->
+    <div class="composer-tools">
+
+      <button type="button"
+        class="plus-btn"
+        id="featureMenuBtn"
+        aria-label="Mga kakayahan ni Daneel"
+        aria-expanded="false">＋</button>
+
+      <div class="feature-menu" id="featureMenu" hidden>
+
+        <button type="button" data-feature="generate">
+          <span class="feature-icon">🎨</span>
+          <span>Gumawa ng larawan</span>
+        </button>
+
+        <button type="button" data-feature="edit">
+          <span class="feature-icon">🖼️</span>
+          <span>Mag-edit ng larawan</span>
+        </button>
+
+      </div>
+    </div>
+
+    <textarea id="message" rows="1"
+      placeholder="Kuwento ka lang, kaibigan..."
+      aria-label="Mensahe kay Daneel"></textarea>
+
+    <button id="sendBtn" aria-label="Ipadala">↑</button>
+
+  </div>
+
+  <p class="hint">
+    Ang pag-uusap na ito ay personal mong diary.
+    Mag-backup upang mapangalagaan ang mga naitala.
+  </p>
+</div>
+      </section>
+
+      <section class="view memory-view" id="memoryView">
+        <h2 class="memory-heading">Pagkakakilala ko sa iyo</h2>
+        <p class="description">
+          Hindi kailangang alam mo na ang lahat tungkol sa sarili mo.
+          Maaaring matutuhan ang mga pattern sa paglipas ng panahon.
+        </p>
+
+        <div class="memory-card">
+          <h3>📚 Mga tunay na pag-uusap</h3>
+          <p id="conversationCount">
+            Naka-save sa browser ang mga mensahe mo.
+          </p>
+        </div>
+        
+        <div class="memory-card">
+  <h3>📖 Daneel Learning Library</h3>
+
+  <p>
+    Suriin ang isang napiling pag-uusap at tukuyin
+    ang mga aral at impormasyong maaaring mapanatili
+    bilang learning references.
+  </p>
+
+  <button class="primary-btn" id="createLearningDraftBtn">
+    📚 Create Learning Draft
+  </button>
+
+  <p id="learningDraftStatus" aria-live="polite"></p>
+</div>
+        
+        <div class="memory-card">
+          <h3>🔎 Mga obserbasyon ni Daneel</h3>
+          <p>
+            Sa kasalukuyan, hindi pa awtomatikong gumagawa ng personal
+            na profile ang backend. Hindi ako magpapanggap na mayroon
+            na akong pangmatagalang memoryang hindi pa naitatayo.
+          </p>
+        </div>
+
+        <div class="memory-card">
+          <h3>✍️ Mga tala tungkol sa sarili</h3>
+          <p style="margin-bottom:12px">
+            Maaari kang magtala rito ng mga ideya o obserbasyong nais
+            mong mapanatili sa browser na ito.
+          </p>
+          <textarea id="notes"
+            placeholder="Halimbawa: Isang paniniwala ko noon, at kung bakit nagbago..."></textarea>
+          <div class="action-row">
+            <button class="primary-btn" id="saveNotes">I-save ang tala</button>
+            <button class="secondary-btn" id="downloadNotes">I-download</button>
+          </div>
+          <div id="notice" aria-live="polite"></div>
+        </div>
+
+        <div class="memory-card">
+          <h3>🔐 Tungkol sa iyong data</h3>
+          <p>
+            Ang mga chat at tala ay iniimbak sa local storage ng browser
+            na ito. Maaaring mawala ang mga ito kapag nilinis ang browser
+            data. Hindi ito kapalit ng backup, at hindi nito ginagarantiyang
+            pribado ang pagproseso ng mensahe sa external AI server.
+          </p>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<section id="settingsScreen" class="settings-screen" hidden
+  aria-label="Settings" aria-modal="true" role="dialog">
+  <div class="settings-container">
+    <div class="settings-header">
+      <button id="settingsBackBtn" class="settings-back">← Back</button>
+      <h2>⚙ Settings</h2>
+    </div>
+
+    <section id="profileEditor" class="settings-card">
+      <h3>Pagkakakilanlan mo</h3>
+      <p>
+        Ano ang gusto mong itawag sa iyo ni Daneel?
+        Maaari itong iba sa pangalang nasa Google account mo.
+      </p>
+
+      <input
+        id="preferredNameInput"
+        type="text"
+        maxlength="40"
+        placeholder="Halimbawa: Daniel"
+        aria-label="Pangalan na itatawag sa iyo ni Daneel"
+      >
+
+      <button id="savePreferredNameBtn" class="small-btn">
+        I-save ang pangalan
+      </button>
+
+      <p id="profileMessage" aria-live="polite"></p>
+    </section>
+  </div>
+</section>
+  <div class="daneel-modal" id="renameModal" hidden>
+  <div class="daneel-dialog">
+    <h3>Palitan ang pamagat</h3>
+
+    <input
+      type="text"
+      id="renameTitleInput"
+      maxlength="60"
+      placeholder="Bagong pamagat..."
+    >
+
+    <div class="daneel-dialog-actions">
+      <button type="button" id="cancelRenameBtn">
+        Kanselahin
+      </button>
+
+      <button type="button" class="primary" id="saveRenameBtn">
+        I-save
+      </button>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+<script>
+const API_URL = "https://daneel-giskard.onrender.com/chat";
+
+const PROFILE_URL = "https://daneel-giskard.onrender.com/profile";
+let preferredName = "";
+  
+const STORAGE_KEY = "daneel_giskard_diary_v1";
+
+const $ = id => document.getElementById(id);
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDNL2mxIH-ry4dClZidMOpxBe-aMeVLeQo",
+  authDomain: "daneel-giskard.firebaseapp.com",
+  projectId: "daneel-giskard",
+  storageBucket: "daneel-giskard.firebasestorage.app",
+  messagingSenderId: "801361334065",
+  appId: "1:801361334065:web:b9280c95acc958ea506a10"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+let currentUser = null;
+
+const googleSignInBtn = $("googleSignInBtn");
+const statusElement = $("status");
+
+
+googleSignInBtn.addEventListener("click", async () => {
+  try {
+    if (currentUser) {
+      await auth.signOut();
+    } else {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      const result = await auth.signInWithPopup(provider);
+
+      currentUser = result.user;
+
+      alert(
+        "Matagumpay ang sign-in!\n" +
+        (currentUser.email || currentUser.uid)
+      );
+    }
+  } catch (error) {
+    console.error("Google sign-in error:", error.code, error.message);
+
+    alert(
+      "Sign-in error code: " + (error.code || "unknown") +
+      "\nDetalye: " + error.message
+    );
+  }
+});
+
+
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+
+  if (user) {
+    googleSignInBtn.textContent = "Mag-sign out";
+    statusElement.textContent =
+      "● Naka-sign in: " + (user.displayName || "Google user");
+        loadDaneelProfile();
+    loadConversationHistory();
+  } else {
+    googleSignInBtn.textContent = "Mag-sign in sa Google";
+    statusElement.textContent = "● Hindi pa naka-sign in";
+    preferredNameInput.value = "";
+    profileMessage.textContent = "";
+preferredName = "";
+  }
+});
+
+
+async function loadDaneelProfile() {
+  if (!currentUser) {
+    preferredName = "";
+    return;
+  }
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(PROFILE_URL, {
+      headers: {
+        "Authorization": `Bearer ${idToken}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi makuha ang profile.");
+    }
+
+    preferredName = data.preferredName || "";
+    preferredNameInput.value = preferredName;
+
+    console.log("Daneel profile loaded.");
+  } catch (error) {
+    console.error("Profile load error:", error.message);
+  }
+}
+
+async function loadConversationMessages(conversationId) {
+  if (!currentUser) return;
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(
+      `${API_URL.replace("/chat", "")}/conversations/${conversationId}/messages`,
+      {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Hindi makuha ang mga mensahe.");
+    }
+
+    const data = await response.json();
+
+    const c = conversations.find(item => item.id === conversationId);
+    if (!c) return;
+
+    c.messages = (data.messages || []).map(message => ({
+      role: message.role === "assistant" ? "bot" : "user",
+      text: message.content
+    }));
+
+  } catch (error) {
+    console.error("Messages loading error:", error);
+    status.textContent = "● Hindi makuha ang mga mensahe";
+  }
+}
+
+  async function reviewLearningDraft(index, action, section) {
+  if (!currentUser || !activeConversationId) {
+    alert("Mag-sign in at pumili muna ng conversation.");
+    return;
+  }
+
+  const buttons = section.querySelectorAll("button");
+  buttons.forEach(button => button.disabled = true);
+
+  try {
+    const idToken = await currentUser.getIdToken();
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/learning/draft/${encodeURIComponent(activeConversationId)}/${index}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ action })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi na-update ang Learning Draft.");
+    }
+
+    const result = document.createElement("p");
+    result.textContent =
+      action === "approve"
+        ? "✓ Approved — na-save na sa Learning Library."
+        : "✕ Rejected — hindi ito isinama sa Learning Library.";
+
+    section.appendChild(result);
+
+    buttons.forEach(button => button.remove());
+
+    status.textContent =
+      action === "approve"
+        ? "● Learning reference approved."
+        : "● Learning draft rejected.";
+
+  } catch (error) {
+    console.error("Learning review error:", error);
+    buttons.forEach(button => button.disabled = false);
+    alert(error.message);
+  }
+}
+  
+async function generateLearningDraft() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  if (!activeConversationId) {
+    alert("Walang napiling conversation.");
+    return;
+  }
+
+  try {
+    status.textContent = "● Sinusuri ang conversation para sa Learning Draft...";
+
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(`${baseURL}/learning/draft`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify({
+        conversationId: activeConversationId
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi makabuo ng Learning Draft.");
+    }
+
+    // Gumawa ng result panel.
+    let panel = document.getElementById("learningDraftPanel");
+
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = "learningDraftPanel";
+
+      Object.assign(panel.style, {
+        position: "fixed",
+        inset: "5%",
+        zIndex: "99999",
+        background: "#172033",
+        color: "#ffffff",
+        padding: "20px",
+        borderRadius: "14px",
+        overflowY: "auto",
+        boxShadow: "0 5px 30px rgba(0,0,0,0.5)"
+      });
+
+      document.body.appendChild(panel);
+    }
+
+    panel.replaceChildren();
+
+    const heading = document.createElement("h3");
+    heading.textContent = "Daneel Learning Drafts";
+    panel.appendChild(heading);
+
+    const closeButton = document.createElement("button");
+    closeButton.textContent = "Close";
+    closeButton.style.marginBottom = "15px";
+    closeButton.onclick = () => panel.remove();
+    panel.appendChild(closeButton);
+
+    const summary = document.createElement("p");
+    summary.textContent =
+      `Conversation: ${data.conversationTitle}\n` +
+      `Drafts found: ${data.drafts.length}`;
+
+    panel.appendChild(summary);
+
+    if (data.drafts.length === 0) {
+      const empty = document.createElement("p");
+      empty.textContent =
+        "Walang nakitang learning reference na sapat ang batayan.";
+      panel.appendChild(empty);
+    }
+
+    data.drafts.forEach((draft, index) => {
+  const section = document.createElement("section");
+
+  section.style.marginTop = "18px";
+  section.style.padding = "12px";
+  section.style.background = "#26344d";
+  section.style.borderRadius = "10px";
+
+  const title = document.createElement("h4");
+  title.textContent = `${index + 1}. ${draft.title}`;
+  section.appendChild(title);
+
+  const type = document.createElement("p");
+  type.textContent =
+    draft.type === "general_lesson"
+      ? "General Lesson and Principle"
+      : "Specific Knowledge and Context";
+  section.appendChild(type);
+
+  const content = document.createElement("p");
+  content.textContent = draft.content;
+  section.appendChild(content);
+
+  const sources = document.createElement("p");
+  sources.textContent =
+    `Source messages: ${(draft.sourceExcerpts || []).length}`;
+  section.appendChild(sources);
+
+  if (draft.status === "approved") {
+    const reviewed = document.createElement("p");
+    reviewed.textContent = "✓ Approved";
+    section.appendChild(reviewed);
+
+  } else if (draft.status === "rejected") {
+    const reviewed = document.createElement("p");
+    reviewed.textContent = "✕ Rejected";
+    section.appendChild(reviewed);
+
+  } else {
+    const approveButton = document.createElement("button");
+    approveButton.textContent = "✓ Approve";
+    approveButton.style.marginRight = "8px";
+    approveButton.onclick = () =>
+      reviewLearningDraft(index, "approve", section);
+
+    const rejectButton = document.createElement("button");
+    rejectButton.textContent = "✕ Reject";
+    rejectButton.onclick = () =>
+      reviewLearningDraft(index, "reject", section);
+
+    section.appendChild(approveButton);
+    section.appendChild(rejectButton);
+  }
+
+  panel.appendChild(section);
+});
+
+    status.textContent = "● Learning Draft generated.";
+
+  } catch (error) {
+    console.error("Learning draft error:", error);
+    status.textContent = "● Learning Draft failed";
+    alert(error.message);
+  }
+}
+
+  $("createLearningDraftBtn").addEventListener(
+  "click",
+  generateLearningDraft
+);
+  
+async function loadConversationHistory() {
+  if (!currentUser) return;
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(
+      `${API_URL.replace("/chat", "")}/conversations`,
+      {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Hindi makuha ang listahan ng usapan.");
+    }
+
+    const data = await response.json();
+    conversations = data.conversations || [];
+
+    // Gumawa ng unang conversation kung wala pa.
+    if (conversations.length === 0) {
+      const createResponse = await fetch(
+        `${API_URL.replace("/chat", "")}/conversations`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${idToken}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({})
+        }
+      );
+
+      if (!createResponse.ok) {
+        throw new Error("Hindi makagawa ng bagong usapan.");
+      }
+
+      const created = await createResponse.json();
+      conversations.push({
+        ...created.conversation,
+        messages: []
+      });
+    }
+
+    activeConversationId = conversations[0].id;
+
+    renderHistory();
+    await loadConversationMessages(activeConversationId);
+    renderChat();
+
+  } catch (error) {
+    console.error("Conversation loading error:", error);
+    status.textContent = "● Hindi ma-load ang mga usapan";
+  }
+}
+
+  
+async function createNewConversation() {
+  if (!currentUser) return;
+
+  try {
+    status.textContent = "● Gumagawa ng bagong usapan...";
+
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(
+      `${API_URL.replace("/chat", "")}/conversations`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${idToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({})
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Hindi makagawa ng bagong usapan.");
+    }
+
+    const data = await response.json();
+
+    const created = {
+      ...data.conversation,
+      messages: []
+    };
+
+    conversations.unshift(created);
+    activeConversationId = created.id;
+
+    renderHistory();
+    renderChat();
+    showView("chatView");
+
+    status.textContent = "● New Chat";
+  } catch (error) {
+    console.error("New conversation error:", error);
+    status.textContent = "● Hindi makagawa ng bagong usapan";
+  }
+}
+
+  $("mobileNewConversation").onclick = createNewConversation;
+  
+async function saveDaneelPreferredName(name) {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return false;
+  }
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(PROFILE_URL, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify({
+        preferredName: name
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi ma-save ang pangalan.");
+    }
+
+    preferredName = data.preferredName;
+    alert("Na-save na ang pangalan mo, " + (preferredName || "kaibigan") + "!");
+    return true;
+  } catch (error) {
+    alert("Hindi na-save ang profile: " + error.message);
+    return false;
+  }
+}
+  
+auth.getRedirectResult()
+  .then(result => {
+    if (result && result.user) {
+      alert(
+        "Matagumpay ang sign-in: " +
+        (result.user.email || result.user.uid)
+      );
+    } else {
+      console.log("Walang redirect result na natanggap.");
+    }
+  })
+  .catch(error => {
+    console.error("Google sign-in error:", error.code, error.message);
+    alert(
+      "Sign-in error code: " + error.code +
+      "\nDetalye: " + error.message
+    );
+  });
+  
+// TEMPORARY SOURCE READER TEST
+const sourceTestButton = document.createElement("button");
+
+sourceTestButton.type = "button";
+sourceTestButton.className = "primary-btn";
+sourceTestButton.textContent = "🔎 Test Daneel Source Reader";
+
+$("memoryView").appendChild(sourceTestButton);
+
+sourceTestButton.addEventListener("click", async () => {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  sourceTestButton.disabled = true;
+  sourceTestButton.textContent = "Sinusuri...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/source-files`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    alert(
+  "SOURCE CODE READER SUCCESS!\n\n" +
+  data.files.map(file =>
+    `${file.filename}\n` +
+    `Lines: ${file.lines}\n` +
+    `Newline characters: ${file.newlineCharacters}\n` +
+    `Size: ${file.bytes} bytes\n` +
+    `SHA-256: ${file.sha256}`
+  ).join("\n\n")
+);
+
+  } catch (error) {
+    alert("SOURCE READER TEST FAILED:\n\n" + error.message);
+
+  } finally {
+    sourceTestButton.disabled = false;
+    sourceTestButton.textContent = "🔎 Test Daneel Source Reader";
+  }
+});
+  
+
+// TEMPORARY CODE INDEXER TEST + EXPLORER
+
+const codeIndexButton = document.createElement("button");
+
+codeIndexButton.type = "button";
+codeIndexButton.className = "primary-btn";
+codeIndexButton.textContent = "🧭 Test Daneel Code Indexer";
+
+$("memoryView").appendChild(codeIndexButton);
+
+// CODE EXPLORER PANEL
+const codeExplorer = document.createElement("div");
+
+codeExplorer.style.cssText = `
+  display:none;
+  margin-top:15px;
+  padding:15px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--panel2);
+`;
+
+const explorerTitle = document.createElement("h3");
+explorerTitle.textContent = "🧭 Daneel Code Explorer";
+
+const explorerInfo = document.createElement("p");
+explorerInfo.textContent = "Hindi pa nakakakuha ng Code Index.";
+
+explorerInfo.style.cssText = `
+  font-size:13px;
+  opacity:.75;
+`;
+
+const categorySelect = document.createElement("select");
+
+categorySelect.style.cssText = `
+  width:100%;
+  padding:11px;
+  margin:8px 0 12px;
+  border-radius:8px;
+  font-size:14px;
+`;
+
+const categories = [
+  ["summary", "📊 Summary"],
+  ["files", "📁 Files"],
+  ["imports", "📦 Imports"],
+  ["functions", "⚙️ Functions"],
+  ["routes", "🌐 API Routes"],
+  ["elementIds", "🆔 HTML IDs"],
+  ["eventListeners", "👂 Event Listeners"],
+  ["eventProperties", "🔧 Event Properties"],
+  ["inlineHandlers", "🖱️ Inline Handlers"],
+  ["dependencies", "🧩 Dependencies"]
+];
+
+categories.forEach(([value, label]) => {
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = label;
+  categorySelect.appendChild(option);
+});
+
+const explorerOutput = document.createElement("pre");
+
+explorerOutput.style.cssText = `
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  overflow-x:auto;
+  max-height:400px;
+  overflow-y:auto;
+  padding:12px;
+  border-radius:8px;
+  background:var(--panel);
+  font-size:12px;
+  line-height:1.6;
+  margin:0;
+`;
+
+// RESULT WINDOW CONTAINER
+const explorerResultBox = document.createElement("div");
+
+explorerResultBox.style.cssText = `
+  position:relative;
+  width:100%;
+`;
+
+// COPY BUTTON
+const explorerCopyButton = document.createElement("button");
+
+explorerCopyButton.type = "button";
+explorerCopyButton.textContent = "📋";
+explorerCopyButton.title = "Copy entire result";
+explorerCopyButton.setAttribute(
+  "aria-label",
+  "Copy entire result"
+);
+
+explorerCopyButton.style.cssText = `
+  position:absolute;
+  top:8px;
+  right:8px;
+  z-index:2;
+  width:34px;
+  height:30px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:var(--panel);
+  color:inherit;
+  cursor:pointer;
+  font-size:15px;
+`;
+
+// BIGYAN NG SPACE ANG COPY BUTTON
+explorerOutput.style.paddingTop = "42px";
+
+// ILAGAY ANG OUTPUT SA CONTAINER
+explorerResultBox.appendChild(explorerCopyButton);
+explorerResultBox.appendChild(explorerOutput);
+
+// COPY FUNCTION
+explorerCopyButton.addEventListener("click", async () => {
+  try {
+    const fullResult =
+      (explorerInfo.textContent || "") +
+      "\n\n" +
+      (explorerOutput.textContent || "");
+
+    await navigator.clipboard.writeText(fullResult);
+
+    explorerCopyButton.textContent = "✓";
+    explorerCopyButton.title = "Copied!";
+
+    setTimeout(() => {
+      explorerCopyButton.textContent = "📋";
+      explorerCopyButton.title = "Copy entire result";
+    }, 1500);
+
+  } catch (error) {
+    console.error("Result copy failed:", error);
+
+    explorerCopyButton.textContent = "✕";
+    explorerCopyButton.title = "Copy failed";
+
+    setTimeout(() => {
+      explorerCopyButton.textContent = "📋";
+      explorerCopyButton.title = "Copy entire result";
+    }, 1500);
+  }
+});
+
+codeExplorer.appendChild(explorerTitle);
+codeExplorer.appendChild(explorerInfo);
+
+codeExplorer.appendChild(categorySelect);
+
+// CODE SEARCH CONTROLS
+const codeSearchControls = document.createElement("div");
+
+codeSearchControls.style.cssText = `
+  display:flex;
+  gap:8px;
+  margin-bottom:12px;
+`;
+
+const codeSearchInput = document.createElement("input");
+
+codeSearchInput.type = "search";
+codeSearchInput.placeholder = "Hal. learning, profile, conversation...";
+codeSearchInput.style.cssText = `
+  flex:1;
+  min-width:0;
+  padding:11px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--panel);
+  color:inherit;
+  font-size:14px;
+`;
+
+const codeSearchButton = document.createElement("button");
+
+codeSearchButton.type = "button";
+codeSearchButton.className = "primary-btn";
+codeSearchButton.textContent = "🔍 Search";
+
+codeSearchControls.appendChild(codeSearchInput);
+codeSearchControls.appendChild(codeSearchButton);
+
+codeExplorer.appendChild(codeSearchControls);
+codeExplorer.appendChild(explorerResultBox);
+
+// ==========================================
+// AI CODE ANALYST UI — READ ONLY
+// ==========================================
+
+const analystSection = document.createElement("div");
+
+analystSection.style.cssText = `
+  margin-top:20px;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--panel);
+`;
+
+const analystTitle = document.createElement("h3");
+analystTitle.textContent = "🧠 AI Code Analyst";
+
+const analystDescription = document.createElement("p");
+analystDescription.textContent =
+  "Magtanong tungkol sa aktuwal na implementation ng Daneel.";
+
+analystDescription.style.cssText = `
+  font-size:13px;
+  opacity:.75;
+  line-height:1.5;
+`;
+
+const analystQuestion = document.createElement("textarea");
+
+analystQuestion.placeholder =
+  "Hal. Ipaliwanag ang retrieval at evidence pipeline ng AI Code Analyst.";
+
+analystQuestion.rows = 4;
+
+analystQuestion.style.cssText = `
+  width:100%;
+  box-sizing:border-box;
+  padding:12px;
+  margin:10px 0;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--panel2);
+  color:inherit;
+  font-size:14px;
+  line-height:1.5;
+  resize:vertical;
+`;
+
+const analystButton = document.createElement("button");
+
+analystButton.type = "button";
+analystButton.className = "primary-btn";
+analystButton.textContent = "🔍 Analyze Code";
+
+analystButton.style.cssText = `
+  width:100%;
+  margin-bottom:12px;
+`;
+
+const analystResult = document.createElement("pre");
+
+analystResult.style.cssText = `
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  overflow-x:auto;
+  max-height:500px;
+  overflow-y:auto;
+  padding:12px;
+  border-radius:8px;
+  background:var(--panel2);
+  font-size:13px;
+  line-height:1.6;
+  display:none;
+`;
+
+const analystMetadata = document.createElement("pre");
+
+analystMetadata.style.cssText = `
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  overflow-x:auto;
+  max-height:350px;
+  overflow-y:auto;
+  padding:12px;
+  border-radius:8px;
+  background:var(--panel2);
+  font-size:12px;
+  line-height:1.6;
+  display:none;
+`;
+
+const analystCopyButton = document.createElement("button");
+
+analystCopyButton.type = "button";
+analystCopyButton.textContent = "📋 Copy Analysis";
+analystCopyButton.style.cssText = `
+  width:100%;
+  margin-top:8px;
+  display:none;
+`;
+
+analystSection.appendChild(analystTitle);
+analystSection.appendChild(analystDescription);
+analystSection.appendChild(analystQuestion);
+analystSection.appendChild(analystButton);
+analystSection.appendChild(analystResult);
+analystSection.appendChild(analystMetadata);
+analystSection.appendChild(analystCopyButton);
+
+codeExplorer.appendChild(analystSection);
+
+
+// ==========================================
+// AI CODE ANALYST REQUEST
+// ==========================================
+
+analystButton.addEventListener("click", async () => {
+
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  const question = analystQuestion.value.trim();
+
+  if (!question) {
+    alert("Maglagay muna ng tanong.");
+    analystQuestion.focus();
+    return;
+  }
+
+  analystButton.disabled = true;
+  analystButton.textContent = "Sinusuri ang source code...";
+
+  analystResult.style.display = "block";
+  analystMetadata.style.display = "none";
+  analystCopyButton.style.display = "none";
+
+  analystResult.textContent = "Please wait...";
+  analystMetadata.textContent = "";
+
+  try {
+
+    // Firebase authentication
+    const idToken = await currentUser.getIdToken();
+
+    // Existing backend base URL
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    // Send request to AI Code Analyst
+    const response = await fetch(
+      `${baseURL}/admin/code-analysis`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          question
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || `HTTP ${response.status}`
+      );
+    }
+
+    // Display AI analysis
+    analystResult.textContent =
+      data.analysis || "Walang analysis na ibinalik.";
+
+    // Display retrieval metadata
+    analystMetadata.textContent =
+      "RETRIEVAL METADATA\n\n" +
+      JSON.stringify(data.retrieval || {}, null, 2);
+
+    analystMetadata.style.display = "block";
+    analystCopyButton.style.display = "block";
+
+  } catch (error) {
+
+    analystResult.textContent =
+      "AI CODE ANALYST ERROR\n\n" +
+      error.message;
+
+    console.error("AI Code Analyst failed:", error);
+
+  } finally {
+
+    analystButton.disabled = false;
+    analystButton.textContent = "🔍 Analyze Code";
+
+  }
+
+});
+
+// ==========================================
+// COPY ANALYSIS + METADATA
+// ==========================================
+
+analystCopyButton.addEventListener("click", async () => {
+
+  try {
+
+    const fullResult =
+      "AI CODE ANALYSIS\n\n" +
+      analystResult.textContent +
+      "\n\n" +
+      analystMetadata.textContent;
+
+    await navigator.clipboard.writeText(fullResult);
+
+    analystCopyButton.textContent = "✓ Copied!";
+
+    setTimeout(() => {
+      analystCopyButton.textContent = "📋 Copy Analysis";
+    }, 1500);
+
+  } catch (error) {
+
+    console.error("Analysis copy failed:", error);
+
+    analystCopyButton.textContent = "✕ Copy failed";
+
+    setTimeout(() => {
+      analystCopyButton.textContent = "📋 Copy Analysis";
+    }, 1500);
+
+  }
+
+});
+
+$("memoryView").appendChild(codeExplorer);
+
+// ITAGO ANG KASALUKUYANG INDEX
+let currentCodeIndex = null;
+
+// IPRESENTA ANG NAPILING CATEGORY
+function displayCodeCategory(category) {
+  if (!currentCodeIndex) return;
+
+  if (category === "summary") {
+    explorerOutput.textContent =
+      "DANEEL CODE INDEX SUMMARY\n\n" +
+      `Version: ${currentCodeIndex.version}\n` +
+      `Method: ${currentCodeIndex.method}\n` +
+      `Read only: ${currentCodeIndex.readOnly}\n\n` +
+      JSON.stringify(currentCodeIndex.summary, null, 2);
+
+    return;
+  }
+
+  const entries = currentCodeIndex[category];
+
+  if (!Array.isArray(entries)) {
+    explorerOutput.textContent = "Walang available na data.";
+    return;
+  }
+
+  explorerOutput.textContent =
+    `CATEGORY: ${category}\n` +
+    `TOTAL ENTRIES: ${entries.length}\n\n` +
+    (
+      entries.length
+        ? JSON.stringify(entries, null, 2)
+        : "Walang nakitang entries sa category na ito."
+    );
+}
+
+// CATEGORY SELECTOR
+categorySelect.addEventListener("change", () => {
+  displayCodeCategory(categorySelect.value);
+});
+
+// KUNIN ANG CODE INDEX
+codeIndexButton.addEventListener("click", async () => {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  codeIndexButton.disabled = true;
+  codeIndexButton.textContent = "Ini-index ang code...";
+
+  codeExplorer.style.display = "block";
+  explorerInfo.textContent = "Kumukuha ng Code Index mula sa backend...";
+  explorerOutput.textContent = "Please wait...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/code-index`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    if (!data.index || !data.index.summary) {
+      throw new Error("Hindi kumpleto ang Code Index response.");
+    }
+
+    currentCodeIndex = data.index;
+
+    explorerInfo.textContent =
+      "Matagumpay na na-index ang " +
+      currentCodeIndex.summary.files +
+      " source files. Piliin ang category na nais siyasatin.";
+
+    categorySelect.value = "summary";
+
+    displayCodeCategory("summary");
+
+  } catch (error) {
+    explorerInfo.textContent = "May naganap na error.";
+
+    explorerOutput.textContent =
+      "CODE INDEXER ERROR\n\n" + error.message;
+
+  } finally {
+    codeIndexButton.disabled = false;
+    codeIndexButton.textContent = "🧭 Test Daneel Code Indexer";
+  }
+});
+
+// CODE RETRIEVAL SEARCH HANDLER
+
+async function searchDaneelCode() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  const query = codeSearchInput.value.trim();
+
+  if (query.length < 2) {
+    alert("Maglagay ng keyword na hindi bababa sa 2 characters.");
+    return;
+  }
+
+  codeSearchButton.disabled = true;
+  codeSearchButton.textContent = "Searching...";
+
+  explorerInfo.textContent =
+    `Hinahanap ang "${query}" sa source files...`;
+
+  explorerOutput.textContent = "Searching source code...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/code-search?q=${encodeURIComponent(query)}&limit=10`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    if (!Array.isArray(data.results)) {
+      throw new Error("Invalid Code Retrieval response.");
+    }
+
+    explorerInfo.textContent =
+      `Search: "${data.query}" | ` +
+      `Results: ${data.totalResults} | ` +
+      `Limit: ${data.limit}`;
+
+    if (data.results.length === 0) {
+      explorerOutput.textContent =
+        "Walang matching source code na nakita.";
+      return;
+    }
+
+    const output = data.results.map((result, index) => {
+      const code = result.excerpt.map(item => {
+        const marker =
+          item.line === result.matchedLine ? " >>> " : "     ";
+
+        return (
+          marker +
+          String(item.line).padStart(5, " ") +
+          " | " +
+          item.code
+        );
+      }).join("\n");
+
+      return (
+        `RESULT ${index + 1}\n` +
+        `FILE: ${result.filename}\n` +
+        `MATCHED LINE: ${result.matchedLine}\n` +
+        `MATCH: ${result.matchedText}\n\n` +
+        code
+      );
+    }).join("\n\n" + "=".repeat(35) + "\n\n");
+
+    explorerOutput.textContent =
+      `CODE RETRIEVAL RESULTS\n` +
+      `==============================\n\n` +
+      output;
+
+  } catch (error) {
+    explorerInfo.textContent = "Code Retrieval failed.";
+
+    explorerOutput.textContent =
+      "ERROR:\n\n" + error.message;
+
+  } finally {
+    codeSearchButton.disabled = false;
+    codeSearchButton.textContent = "🔍 Search";
+  }
+}
+
+// =========================================
+// FUNCTION-AWARE RETRIEVAL v2 — TEST
+// =========================================
+
+async function testFunctionRetrieval() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  const functionName = "requireSourceAdmin";
+
+  functionTestButton.disabled = true;
+  functionTestButton.textContent = "Loading...";
+
+  explorerInfo.textContent =
+    `Kinukuha ang buong function: ${functionName}`;
+
+  explorerOutput.textContent =
+    "Retrieving function definition and references...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/code-function?name=${encodeURIComponent(functionName)}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    if (!Array.isArray(data.functions) ||
+        !Array.isArray(data.references)) {
+      throw new Error("Invalid Function Retrieval response.");
+    }
+
+    explorerInfo.textContent =
+      `Function: ${data.functionName} | ` +
+      `Definitions: ${data.definitionCount} | ` +
+      `References: ${data.referenceCount}`;
+
+    let output =
+      `FUNCTION-AWARE RETRIEVAL v${data.retrievalVersion}\n` +
+      `========================================\n\n` +
+      `FUNCTION NAME: ${data.functionName}\n` +
+      `METHOD: ${data.method}\n` +
+      `READ ONLY: ${data.readOnly}\n\n`;
+
+    if (data.functions.length === 0) {
+      output += "WALANG FUNCTION DEFINITION NA NAKITA.\n\n";
+    }
+
+    data.functions.forEach((fn, index) => {
+      const numberedCode = fn.code
+        .split(/\r\n|\n|\r/)
+        .map((line, i) =>
+          String(fn.startLine + i).padStart(5, " ") +
+          " | " + line
+        )
+        .join("\n");
+
+      output +=
+        `FUNCTION DEFINITION ${index + 1}\n` +
+        `FILE: ${fn.filename}\n` +
+        `START LINE: ${fn.startLine}\n` +
+        `END LINE: ${fn.endLine}\n` +
+        `TOTAL LINES: ${fn.totalLines}\n\n` +
+        numberedCode +
+        "\n\n";
+    });
+
+    output +=
+      "\n" + "=".repeat(40) +
+      "\nFUNCTION REFERENCES\n" +
+      "=".repeat(40) + "\n\n";
+
+    if (data.references.length === 0) {
+      output += "Walang references na nakita.\n";
+    }
+
+    data.references.forEach((ref, index) => {
+      output +=
+        `${index + 1}. ${ref.filename}\n` +
+        `   LINE: ${ref.line}\n` +
+        `   CODE: ${ref.code}\n\n`;
+    });
+
+    explorerOutput.textContent = output;
+
+  } catch (error) {
+    explorerInfo.textContent =
+      "Function Retrieval failed.";
+
+    explorerOutput.textContent =
+      "ERROR:\n\n" + error.message;
+
+  } finally {
+    functionTestButton.disabled = false;
+    functionTestButton.textContent =
+      "🧩 Test Function Retrieval";
+  }
+}
+
+
+async function testRelationshipMapping() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  const functionName = "requireSourceAdmin";
+
+  relationshipTestButton.disabled = true;
+  relationshipTestButton.textContent = "Loading...";
+
+  explorerInfo.textContent =
+    `Sinusuri ang relationships ng: ${functionName}`;
+
+  explorerOutput.textContent =
+    "Mapping function relationships...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/code-relationships?name=${encodeURIComponent(functionName)}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    if (!Array.isArray(data.relationships)) {
+      throw new Error("Invalid Relationship Mapping response.");
+    }
+
+    explorerInfo.textContent =
+      `Function: ${data.functionName} | ` +
+      `Relationships: ${data.relationshipCount}`;
+
+    let output =
+      `CODE RELATIONSHIP MAPPING v${data.retrievalVersion}\n` +
+      "========================================\n\n" +
+      `FUNCTION NAME: ${data.functionName}\n` +
+      `METHOD: ${data.method}\n` +
+      `READ ONLY: ${data.readOnly}\n` +
+      `RELATIONSHIPS FOUND: ${data.relationshipCount}\n\n`;
+
+    if (data.relationships.length === 0) {
+      output +=
+        "WALANG ROUTE RELATIONSHIP NA NAKITA.\n";
+    }
+
+    data.relationships.forEach((item, index) => {
+      output +=
+        `RELATIONSHIP ${index + 1}\n` +
+        `FILE: ${item.filename}\n` +
+        `METHOD: ${item.method}\n` +
+        `ROUTE: ${item.routePath}\n` +
+        `LINE: ${item.line}\n` +
+        `ROLE: ${item.role}\n` +
+        `TYPE: ${item.relationshipType}\n` +
+        `MATCHED CODE: ${item.matchedCode}\n\n`;
+    });
+
+    explorerOutput.textContent = output;
+
+  } catch (error) {
+    explorerInfo.textContent =
+      "Relationship Mapping failed.";
+
+    explorerOutput.textContent =
+      "ERROR:\n\n" + error.message;
+
+  } finally {
+    relationshipTestButton.disabled = false;
+    relationshipTestButton.textContent =
+      "🔗 Relationship Mapping";
+  }
+}
+
+async function testLineRangeReader() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  const filename = prompt(
+    "Anong file ang babasahin?\n\nserver.js\nindex.html\npackage.json",
+    "server.js"
+  );
+
+  if (!filename) return;
+
+  if (!["server.js", "index.html", "package.json"].includes(filename)) {
+    alert("Hindi pinapayagang basahin ang file na iyan.");
+    return;
+  }
+
+  const start = Number(prompt(
+    "Starting line:",
+    "2080"
+  ));
+
+  if (!Number.isInteger(start) || start < 1) {
+    alert("Invalid starting line.");
+    return;
+  }
+
+  const end = Number(prompt(
+    "Ending line:",
+    "2326"
+  ));
+
+  if (
+    !Number.isInteger(end) ||
+    end < start ||
+    end - start + 1 > 500
+  ) {
+    alert("Invalid line range. Maximum 500 lines.");
+    return;
+  }
+
+  lineRangeReaderButton.disabled = true;
+  lineRangeReaderButton.textContent = "Loading...";
+
+  explorerInfo.textContent =
+    `Reading ${filename}: lines ${start}-${end}`;
+
+  explorerOutput.textContent =
+    "Retrieving source code...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const params = new URLSearchParams({
+      filename,
+      start: String(start),
+      end: String(end)
+    });
+
+    const response = await fetch(
+      `${baseURL}/admin/code-range?${params.toString()}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    if (!Array.isArray(data.results)) {
+      throw new Error("Invalid Line Range Reader response.");
+    }
+
+    explorerInfo.textContent =
+      `${data.filename} | ` +
+      `Lines ${data.returnedStart}-${data.returnedEnd} | ` +
+      `${data.returnedLines} lines retrieved`;
+
+    let output =
+      `DANEEL LINE RANGE READER v${data.retrievalVersion}\n` +
+      "========================================\n\n" +
+      `FILE: ${data.filename}\n` +
+      `METHOD: ${data.method}\n` +
+      `READ ONLY: ${data.readOnly}\n` +
+      `TOTAL FILE LINES: ${data.totalFileLines}\n` +
+      `REQUESTED RANGE: ${data.requestedStart}-${data.requestedEnd}\n` +
+      `RETURNED RANGE: ${data.returnedStart}-${data.returnedEnd}\n` +
+      `LINES RETRIEVED: ${data.returnedLines}\n\n` +
+      "SOURCE CODE\n" +
+      "========================================\n\n";
+
+    data.results.forEach(item => {
+      output +=
+        `${String(item.line).padStart(5, " ")} | ${item.code}\n`;
+    });
+
+    explorerOutput.textContent = output;
+
+  } catch (error) {
+    explorerInfo.textContent =
+      "Line Range Reader failed.";
+
+    explorerOutput.textContent =
+      "ERROR:\n\n" + error.message;
+
+  } finally {
+    lineRangeReaderButton.disabled = false;
+    lineRangeReaderButton.textContent =
+      "📄 Line Range Reader";
+  }
+}
+
+async function testAcornParser() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  acornParserTestButton.disabled = true;
+  acornParserTestButton.textContent = "Parsing...";
+
+  explorerInfo.textContent =
+    "Testing Acorn JavaScript parser...";
+
+  explorerOutput.textContent =
+    "Reading and parsing server.js...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/code-parser-test`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    if (!data.success || !data.parseSuccess) {
+      throw new Error("Acorn parsing was not successful.");
+    }
+
+    explorerInfo.textContent =
+      `${data.parser} | ` +
+      `${data.astNodeCount} AST nodes | ` +
+      `${data.sourceLines} source lines`;
+
+    let output =
+      `DANEEL ACORN PARSER DIAGNOSTIC v${data.diagnosticVersion}\n` +
+      "========================================\n\n" +
+      `PARSER: ${data.parser}\n` +
+      `FILE: ${data.filename}\n` +
+      `READ ONLY: ${data.readOnly}\n` +
+      `PARSE SUCCESS: ${data.parseSuccess}\n` +
+      `ECMASCRIPT VERSION: ${data.ecmaVersion}\n` +
+      `SOURCE TYPE: ${data.sourceType}\n` +
+      `SOURCE BYTES: ${data.sourceBytes}\n` +
+      `SOURCE LINES: ${data.sourceLines}\n` +
+      `AST NODE COUNT: ${data.astNodeCount}\n` +
+      `SHA-256: ${data.sourceSHA256}\n\n` +
+      "AST NODE TYPES\n" +
+      "========================================\n\n";
+
+    Object.entries(data.nodeTypes || {})
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([type, count]) => {
+        output += `${type}: ${count}\n`;
+      });
+
+    explorerOutput.textContent = output;
+
+  } catch (error) {
+    explorerInfo.textContent =
+      "Acorn Parser Test failed.";
+
+    explorerOutput.textContent =
+      "ERROR:\n\n" + error.message;
+
+  } finally {
+    acornParserTestButton.disabled = false;
+    acornParserTestButton.textContent =
+      "🌳 Acorn Parser Test";
+  }
+}
+
+async function testCodeRelationshipsV4() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  const functionName = (
+    prompt(
+      "Anong function ang hahanapin?",
+      "requireSourceAdmin"
+    ) || ""
+  ).trim();
+
+  if (!functionName) return;
+
+  relationshipMappingV4Button.disabled = true;
+  relationshipMappingV4Button.textContent =
+    "Analyzing...";
+
+  explorerInfo.textContent =
+    "Running AST Relationship Mapping v4.0...";
+
+  explorerOutput.textContent =
+    `Analyzing references to ${functionName} in server.js...`;
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/code-relationships-v4?name=${encodeURIComponent(functionName)}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.error ||
+        data.details ||
+        `HTTP ${response.status}`
+      );
+    }
+
+    explorerInfo.textContent =
+      `${data.retrievalVersion} | ` +
+      `${data.relationshipCount} relationships | ` +
+      `${data.sourceLines} source lines`;
+
+    let output =
+      `DANEEL RELATIONSHIP MAPPING v${data.retrievalVersion}\n` +
+      "========================================\n\n" +
+      `METHOD: ${data.method}\n` +
+      `PARSER: ${data.parser}\n` +
+      `FILE: ${data.filename}\n` +
+      `READ ONLY: ${data.readOnly}\n` +
+      `FUNCTION: ${data.functionName}\n` +
+      `SOURCE BYTES: ${data.sourceBytes}\n` +
+      `SOURCE LINES: ${data.sourceLines}\n` +
+      `SHA-256: ${data.sourceSHA256}\n` +
+      `RELATIONSHIP COUNT: ${data.relationshipCount}\n\n` +
+      "RELATIONSHIPS\n" +
+      "========================================\n\n";
+
+    if (!data.relationships?.length) {
+      output += "No relationships found.\n";
+    } else {
+      data.relationships.forEach((item, index) => {
+        output +=
+          `[${index + 1}]\n` +
+          `FUNCTION: ${item.functionName}\n` +
+          `TYPE: ${item.relationshipType}\n` +
+          `ROLE: ${item.role}\n` +
+          `METHOD: ${item.method}\n` +
+          `ROUTE: ${item.routePath}\n` +
+          `ARGUMENT POSITION: ${item.argumentPosition}\n` +
+          `LINE: ${item.line}:${item.column}\n` +
+          `END: ${item.endLine}:${item.endColumn}\n` +
+          `CODE: ${item.matchedCode}\n\n`;
+      });
+    }
+
+    explorerOutput.textContent = output;
+
+  } catch (error) {
+    explorerInfo.textContent =
+      "Relationship Mapping v4.0 failed.";
+
+    explorerOutput.textContent =
+      "ERROR:\n\n" + error.message;
+
+  } finally {
+    relationshipMappingV4Button.disabled = false;
+    relationshipMappingV4Button.textContent =
+      "🔗 Relationship Mapping v4.0";
+  }
+}
+
+async function testCodeRelationshipsV41() {
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  const functionName = (
+    prompt(
+      "Anong function ang hahanapin?",
+      "requireSourceAdmin"
+    ) || ""
+  ).trim();
+
+  if (!functionName) return;
+
+  relationshipMappingV41Button.disabled = true;
+  relationshipMappingV41Button.textContent =
+    "Analyzing...";
+
+  explorerInfo.textContent =
+    "Running AST Relationship Mapping v4.1...";
+
+  explorerOutput.textContent =
+    `Analyzing definition and references of ${functionName} in server.js...`;
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    const response = await fetch(
+      `${baseURL}/admin/code-relationships-v4-1?name=${encodeURIComponent(functionName)}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.error ||
+        data.details ||
+        `HTTP ${response.status}`
+      );
+    }
+
+    explorerInfo.textContent =
+      `${data.retrievalVersion} | ` +
+      `${data.definitionCount} definitions | ` +
+      `${data.relationshipCount} relationships | ` +
+      `${data.sourceLines} source lines`;
+
+    let output =
+      `DANEEL RELATIONSHIP MAPPING v${data.retrievalVersion}\n` +
+      "========================================\n\n" +
+      `METHOD: ${data.method}\n` +
+      `PARSER: ${data.parser}\n` +
+      `FILE: ${data.filename}\n` +
+      `READ ONLY: ${data.readOnly}\n` +
+      `FUNCTION: ${data.functionName}\n` +
+      `SOURCE BYTES: ${data.sourceBytes}\n` +
+      `SOURCE LINES: ${data.sourceLines}\n` +
+      `SHA-256: ${data.sourceSHA256}\n\n`;
+
+    // FUNCTION DEFINITIONS
+    output +=
+      "FUNCTION DEFINITIONS\n" +
+      "========================================\n\n" +
+      `DEFINITION COUNT: ${data.definitionCount}\n\n`;
+
+    if (!data.definitions?.length) {
+      output += "No function definitions found.\n\n";
+    } else {
+      data.definitions.forEach((item, index) => {
+        output +=
+          `[${index + 1}]\n` +
+          `FUNCTION: ${item.functionName}\n` +
+          `TYPE: ${item.definitionType}\n` +
+          `PARAMETERS: ${item.parameters.join(", ")}\n` +
+          `START: ${item.startLine}:${item.startColumn}\n` +
+          `END: ${item.endLine}:${item.endColumn}\n` +
+          `SOURCE RANGE: ${item.sourceStart}-${item.sourceEnd}\n` +
+          "SOURCE CODE:\n" +
+          `${item.sourceCode}\n\n` +
+          "----------------------------------------\n\n";
+      });
+    }
+
+    // FUNCTION RELATIONSHIPS
+    output +=
+      "FUNCTION RELATIONSHIPS\n" +
+      "========================================\n\n" +
+      `RELATIONSHIP COUNT: ${data.relationshipCount}\n\n`;
+
+    if (!data.relationships?.length) {
+      output += "No relationships found.\n";
+    } else {
+      data.relationships.forEach((item, index) => {
+        output +=
+          `[${index + 1}]\n` +
+          `FUNCTION: ${item.functionName}\n` +
+          `TYPE: ${item.relationshipType}\n` +
+          `ROLE: ${item.role}\n` +
+          `METHOD: ${item.method}\n` +
+          `ROUTE: ${item.routePath}\n` +
+          `ARGUMENT POSITION: ${item.argumentPosition}\n` +
+          `LINE: ${item.line}:${item.column}\n` +
+          `END: ${item.endLine}:${item.endColumn}\n` +
+          `CODE: ${item.matchedCode}\n\n`;
+      });
+    }
+
+    explorerOutput.textContent = output;
+
+  } catch (error) {
+    explorerInfo.textContent =
+      "Relationship Mapping v4.1 failed.";
+
+    explorerOutput.textContent =
+      "ERROR:\n\n" + error.message;
+
+  } finally {
+    relationshipMappingV41Button.disabled = false;
+    relationshipMappingV41Button.textContent =
+      "🔍 Relationship Mapping v4.1";
+  }
+}
+
+
+// Gumawa ng bagong button katabi ng Search button.
+const functionTestButton = document.createElement("button");
+
+functionTestButton.type = "button";
+functionTestButton.className = codeSearchButton.className;
+functionTestButton.textContent =
+  "🧩 Test Function Retrieval";
+
+codeSearchButton.insertAdjacentElement(
+  "afterend",
+  functionTestButton
+);
+
+functionTestButton.addEventListener(
+  "click",
+  testFunctionRetrieval
+);
+  
+// RELATIONSHIP MAPPING BUTTON
+const relationshipTestButton =
+  document.createElement("button");
+
+relationshipTestButton.type = "button";
+relationshipTestButton.className =
+  codeSearchButton.className;
+
+relationshipTestButton.textContent =
+  "🔗 Relationship Mapping";
+
+functionTestButton.insertAdjacentElement(
+  "afterend",
+  relationshipTestButton
+);
+
+relationshipTestButton.addEventListener(
+  "click",
+  testRelationshipMapping
+);
+
+// LINE RANGE READER BUTTON
+const lineRangeReaderButton =
+  document.createElement("button");
+
+lineRangeReaderButton.type = "button";
+lineRangeReaderButton.className =
+  codeSearchButton.className;
+
+lineRangeReaderButton.textContent =
+  "📄 Line Range Reader";
+
+relationshipTestButton.insertAdjacentElement(
+  "afterend",
+  lineRangeReaderButton
+);
+
+lineRangeReaderButton.addEventListener(
+  "click",
+  testLineRangeReader
+);
+  
+// ACORN PARSER TEST BUTTON
+const acornParserTestButton =
+  document.createElement("button");
+
+acornParserTestButton.type = "button";
+acornParserTestButton.className =
+  codeSearchButton.className;
+
+acornParserTestButton.textContent =
+  "🌳 Acorn Parser Test";
+
+lineRangeReaderButton.insertAdjacentElement(
+  "afterend",
+  acornParserTestButton
+);
+
+acornParserTestButton.addEventListener(
+  "click",
+  testAcornParser
+);
+  
+  // RELATIONSHIP MAPPING V4 BUTTON
+const relationshipMappingV4Button =
+  document.createElement("button");
+
+relationshipMappingV4Button.type = "button";
+relationshipMappingV4Button.className =
+  codeSearchButton.className;
+
+relationshipMappingV4Button.textContent =
+  "🔗 Relationship Mapping v4.0";
+
+acornParserTestButton.insertAdjacentElement(
+  "afterend",
+  relationshipMappingV4Button
+);
+
+relationshipMappingV4Button.addEventListener(
+  "click",
+  testCodeRelationshipsV4
+);
+
+// RELATIONSHIP MAPPING V4.1 BUTTON
+const relationshipMappingV41Button =
+  document.createElement("button");
+
+relationshipMappingV41Button.type = "button";
+relationshipMappingV41Button.className =
+  codeSearchButton.className;
+
+relationshipMappingV41Button.textContent =
+  "🔍 Relationship Mapping v4.1";
+
+relationshipMappingV4Button.insertAdjacentElement(
+  "afterend",
+  relationshipMappingV41Button
+);
+
+relationshipMappingV41Button.addEventListener(
+  "click",
+  testCodeRelationshipsV41
+);
+
+// SEARCH BUTTON
+codeSearchButton.addEventListener(
+  "click",
+  searchDaneelCode
+);
+
+// ENTER KEY
+codeSearchInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    searchDaneelCode();
+  }
+});
+
+const profileEditor = $("profileEditor");
+const preferredNameInput = $("preferredNameInput");
+const savePreferredNameBtn = $("savePreferredNameBtn");
+const profileMessage = $("profileMessage");
+const settingsScreen = $("settingsScreen");
+
+$("settingsBtn").addEventListener("click", () => {
+  if (currentUser) {
+    preferredNameInput.value = preferredName;
+  }
+  settingsScreen.hidden = false;
+  settingsScreen.setAttribute("aria-hidden", "false");
+  preferredNameInput.focus();
+});
+
+$("settingsBackBtn").addEventListener("click", () => {
+  settingsScreen.hidden = true;
+  settingsScreen.setAttribute("aria-hidden", "true");
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !settingsScreen.hidden) {
+    settingsScreen.hidden = true;
+    settingsScreen.setAttribute("aria-hidden", "true");
+  }
+});
+
+savePreferredNameBtn.addEventListener("click", async () => {
+  const name = preferredNameInput.value.trim();
+
+  const saved = await saveDaneelPreferredName(name);
+
+  if (saved) {
+    profileMessage.textContent = name
+      ? "Naka-save na ang gusto mong pangalan."
+      : "Na-clear na ang pangalan mo.";
+  }
+});
+  
+const chat = $("chat");
+const input = $("message");
+const sendBtn = $("sendBtn");
+const status = $("status");
+
+// ===================================
+// DANEEL FEATURE MENU
+// ===================================
+
+const featureMenuBtn = $("featureMenuBtn");
+const featureMenu = $("featureMenu");
+const featurePanel = $("featurePanel");
+const featureTitle = $("featureTitle");
+const featureContent = $("featureContent");
+
+function toggleFeatureMenu() {
+  const isOpen = !featureMenu.hidden;
+
+  featureMenu.hidden = isOpen;
+  featureMenuBtn.setAttribute(
+    "aria-expanded",
+    String(!isOpen)
+  );
+}
+
+function closeFeatureMenu() {
+  featureMenu.hidden = true;
+  featureMenuBtn.setAttribute("aria-expanded", "false");
+}
+
+function closeFeaturePanel() {
+  featurePanel.hidden = true;
+  featureContent.replaceChildren();
+}
+
+function openFeature(feature) {
+  closeFeatureMenu();
+
+  featurePanel.hidden = false;
+  featureContent.replaceChildren();
+
+  if (feature === "generate") {
+    featureTitle.textContent = "🎨 Gumawa ng larawan";
+
+    const prompt = document.createElement("textarea");
+    prompt.id = "imagePrompt";
+    prompt.maxLength = 4000;
+    prompt.placeholder =
+      "Ilarawan ang larawang gusto mong ipagawa kay Daneel...";
+
+    const generateBtn = document.createElement("button");
+    generateBtn.type = "button";
+    generateBtn.id = "generateImageBtn";
+    generateBtn.className = "primary-btn";
+    generateBtn.textContent = "Gumawa ng larawan";
+
+    generateBtn.addEventListener("click", generateImage);
+
+    featureContent.append(prompt, generateBtn);
+  }
+
+  if (feature === "edit") {
+    featureTitle.textContent = "🖼️ Mag-edit ng larawan";
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.id = "editImageFile";
+    fileInput.accept = "image/jpeg,image/png,image/webp";
+
+    const prompt = document.createElement("textarea");
+    prompt.id = "editImagePrompt";
+    prompt.maxLength = 4000;
+    prompt.placeholder =
+      "Ilarawan kung anong pagbabago ang gusto mo sa larawan...";
+
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.id = "editImageBtn";
+    editBtn.className = "primary-btn";
+    editBtn.textContent = "I-edit ang larawan";
+
+    editBtn.addEventListener("click", editImage);
+
+    featureContent.append(fileInput, prompt, editBtn);
+  }
+}
+
+// ===================================
+// DANEEL IMAGE GENERATION AND EDITING
+// ===================================
+
+const IMAGE_API_URL = API_URL.replace("/chat", "");
+
+function showImageResult(imageData, filename) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "message bot";
+
+  const sender = document.createElement("div");
+  sender.className = "sender";
+  sender.textContent = "Daneel Giskard";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+
+  const message = document.createElement("div");
+  message.textContent = "Narito na ang larawan mo. 😊";
+
+  const result = document.createElement("div");
+  result.className = "image-result";
+
+  const img = document.createElement("img");
+  img.src = imageData;
+  img.alt = "Larawang ginawa ni Daneel";
+
+  const downloadBtn = document.createElement("a");
+  downloadBtn.className = "image-download-btn";
+  downloadBtn.href = imageData;
+  downloadBtn.download = filename;
+  downloadBtn.textContent = "⬇ I-download ang larawan";
+
+  result.append(img, downloadBtn);
+  bubble.append(message, result);
+  wrapper.append(sender, bubble);
+
+  chat.appendChild(wrapper);
+  chat.scrollTop = chat.scrollHeight;
+
+  // Subukang awtomatikong i-download ang larawan.
+  const autoDownload = document.createElement("a");
+  autoDownload.href = imageData;
+  autoDownload.download = filename;
+  document.body.appendChild(autoDownload);
+  autoDownload.click();
+  autoDownload.remove();
+}
+
+async function generateImage() {
+  const prompt = $("imagePrompt")?.value.trim();
+  const button = $("generateImageBtn");
+
+  if (!prompt) {
+    alert("Ilarawan muna ang larawang gusto mong gawin.");
+    return;
+  }
+
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  if (busy) {
+    alert("May kasalukuyang ginagawa si Daneel. Pakihintay muna.");
+    return;
+  }
+
+  busy = true;
+  button.disabled = true;
+  button.textContent = "Gumagawa ng larawan...";
+
+  status.textContent = "● Gumagawa ng larawan si Daneel...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(
+      `${IMAGE_API_URL}/generate-image`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ prompt })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi nagawa ang larawan.");
+    }
+
+    if (!data.success || !data.image) {
+      throw new Error("Walang valid na image data mula sa server.");
+    }
+
+    showImageResult(
+      data.image,
+      "daneel-generated-image.png"
+    );
+
+    closeFeaturePanel();
+    status.textContent = "● Handa nang gumawa ulit si Daneel";
+
+  } catch (error) {
+    console.error("Image generation error:", error);
+    alert("Hindi nagawa ang larawan:\n" + error.message);
+    status.textContent = "● Nagkaroon ng problema sa paggawa ng larawan";
+
+  } finally {
+    busy = false;
+    if ($("generateImageBtn")) {
+      $("generateImageBtn").disabled = false;
+    }
+  }
+}
+
+async function editImage() {
+  const fileInput = $("editImageFile");
+  const prompt = $("editImagePrompt")?.value.trim();
+  const button = $("editImageBtn");
+
+  const file = fileInput?.files?.[0];
+
+  if (!file) {
+    alert("Pumili muna ng larawang ie-edit.");
+    return;
+  }
+
+  if (!prompt) {
+    alert("Ilarawan muna ang pagbabagong gusto mo.");
+    return;
+  }
+
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  if (busy) {
+    alert("May kasalukuyang ginagawa si Daneel. Pakihintay muna.");
+    return;
+  }
+
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp"
+  ];
+
+  if (!allowedTypes.includes(file.type)) {
+    alert("JPEG, PNG, o WebP lamang ang puwedeng i-edit.");
+    return;
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    alert("Hanggang 10 MB lamang ang image file.");
+    return;
+  }
+
+  busy = true;
+  button.disabled = true;
+  button.textContent = "Ini-edit ang larawan...";
+
+  status.textContent = "● Ini-edit ni Daneel ang larawan...";
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("prompt", prompt);
+
+    const response = await fetch(
+      `${IMAGE_API_URL}/edit-image`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: formData
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi na-edit ang larawan.");
+    }
+
+    if (!data.success || !data.image) {
+      throw new Error("Walang valid na edited image data mula sa server.");
+    }
+
+    showImageResult(
+      data.image,
+      "daneel-edited-image.png"
+    );
+
+    closeFeaturePanel();
+    status.textContent = "● Handa nang mag-edit ulit si Daneel";
+
+  } catch (error) {
+    console.error("Image editing error:", error);
+    alert("Hindi na-edit ang larawan:\n" + error.message);
+    status.textContent = "● Nagkaroon ng problema sa pag-edit ng larawan";
+
+  } finally {
+    busy = false;
+    if ($("editImageBtn")) {
+      $("editImageBtn").disabled = false;
+    }
+  }
+}
+
+featureMenuBtn.addEventListener("click", toggleFeatureMenu);
+
+featureMenu.querySelectorAll("[data-feature]").forEach(button => {
+  button.addEventListener("click", () => {
+    openFeature(button.dataset.feature);
+  });
+});
+
+$("closeFeatureBtn").addEventListener("click", closeFeaturePanel);
+
+document.addEventListener("click", event => {
+  if (
+    !featureMenu.hidden &&
+    !featureMenu.contains(event.target) &&
+    !featureMenuBtn.contains(event.target)
+  ) {
+    closeFeatureMenu();
+  }
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    closeFeatureMenu();
+    closeFeaturePanel();
+  }
+});
+
+let busy = false;
+let state = loadState();
+
+// Firestore na ang magiging source ng conversations.
+let conversations = [];
+let activeConversationId = null;
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    if (saved) {
+      const parsed = JSON.parse(saved);
+
+      return {
+        notes: typeof parsed.notes === "string"
+          ? parsed.notes
+          : ""
+      };
+    }
+  } catch (e) {
+    console.warn("Hindi mabasa ang lokal na notes.", e);
+  }
+
+  return {
+    notes: ""
+  };
+}
+
+function persist() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      notes: state.notes || ""
+    }));
+    return true;
+  } catch (e) {
+    console.error("Hindi ma-save ang notes.", e);
+    status.textContent = "● Hindi na-save ang notes";
+    return false;
+  }
+}
+  
+function activeConversation() {
+  return conversations.find(
+    c => c.id === activeConversationId
+  );
+}
+
+function saveConversation() {
+  renderHistory();
+}
+
+
+
+let floatingHistoryMenu = null;
+
+function closeHistoryMenu() {
+  if (floatingHistoryMenu) {
+    floatingHistoryMenu.hidden = true;
+  }
+}
+
+function showHistoryMenu(button, conversationId) {
+  if (!floatingHistoryMenu) {
+    floatingHistoryMenu = document.createElement("div");
+    floatingHistoryMenu.className = "history-dropdown floating-history-dropdown";
+    document.body.appendChild(floatingHistoryMenu);
+  }
+
+  floatingHistoryMenu.replaceChildren();
+
+  const renameBtn = document.createElement("button");
+  renameBtn.className = "history-dropdown-item";
+  renameBtn.textContent = "✏️ Palitan ang pamagat";
+  renameBtn.onclick = () => {
+    closeHistoryMenu();
+    renameConversation(conversationId);
+  };
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.className = "history-dropdown-item delete-option";
+  deleteBtn.textContent = "🗑️ Burahin ang usapan";
+  deleteBtn.onclick = () => {
+    closeHistoryMenu();
+    deleteConversation(conversationId);
+  };
+
+  floatingHistoryMenu.append(renameBtn, deleteBtn);
+
+  const rect = button.getBoundingClientRect();
+
+  floatingHistoryMenu.hidden = false;
+
+  const menuWidth = 190;
+  const menuHeight = 100;
+
+  let left = Math.max(
+    8,
+    Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8)
+  );
+
+  let top = rect.bottom + 5;
+
+  if (top + menuHeight > window.innerHeight - 8) {
+    top = rect.top - menuHeight - 5;
+  }
+
+  floatingHistoryMenu.style.left = left + "px";
+  floatingHistoryMenu.style.top = Math.max(8, top) + "px";
+}
+
+function renderHistory() {
+  const desktop = $("history");
+  const mobile = $("mobileHistory");
+
+  desktop.replaceChildren();
+mobile.querySelectorAll(".history-row").forEach(item => item.remove());
+
+  function createHistoryItem(c) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "history-row";
+
+    const titleBtn = document.createElement("button");
+    titleBtn.className =
+      "history-item" +
+      (c.id === activeConversationId ? " active" : "");
+
+    titleBtn.textContent = c.title;
+    titleBtn.title = c.title;
+    titleBtn.onclick = () => switchConversation(c.id);
+
+    const menuBtn = document.createElement("button");
+    menuBtn.className = "history-menu-btn";
+    menuBtn.textContent = "⋮";
+    menuBtn.title = "Mga opsyon";
+    menuBtn.setAttribute("aria-label", "Mga opsyon sa usapan");
+
+    menuBtn.onclick = (event) => {
+      event.stopPropagation();
+
+      if (
+        floatingHistoryMenu &&
+        !floatingHistoryMenu.hidden &&
+        floatingHistoryMenu.dataset.conversationId === c.id &&
+        floatingHistoryMenu.dataset.buttonType ===
+          (wrapper.parentElement.id || "")
+      ) {
+        closeHistoryMenu();
+        return;
+      }
+
+      showHistoryMenu(menuBtn, c.id);
+
+      floatingHistoryMenu.dataset.conversationId = c.id;
+      floatingHistoryMenu.dataset.buttonType =
+        wrapper.parentElement.id || "";
+    };
+
+    wrapper.append(titleBtn, menuBtn);
+    return wrapper;
+  }
+
+  conversations.forEach(c => {
+    desktop.appendChild(createHistoryItem(c));
+    mobile.appendChild(createHistoryItem(c));
+  });
+}
+
+document.addEventListener("click", (event) => {
+  if (
+    floatingHistoryMenu &&
+    !floatingHistoryMenu.hidden &&
+    !floatingHistoryMenu.contains(event.target)
+  ) {
+    closeHistoryMenu();
+  }
+});
+
+window.addEventListener("resize", closeHistoryMenu);
+window.addEventListener("scroll", closeHistoryMenu, true);
+
+
+  let renameTargetId = null;
+
+function renameConversation(id) {
+  const c = conversations.find(item => item.id === id);
+  if (!c || !currentUser) return;
+
+  renameTargetId = id;
+
+  $("renameTitleInput").value = c.title;
+  $("renameModal").hidden = false;
+
+  $("renameTitleInput").focus();
+  $("renameTitleInput").select();
+}
+
+function closeRenameModal() {
+  $("renameModal").hidden = true;
+  renameTargetId = null;
+}
+
+$("cancelRenameBtn").onclick = closeRenameModal;
+
+$("renameModal").onclick = (event) => {
+  if (event.target === $("renameModal")) {
+    closeRenameModal();
+  }
+};
+
+$("saveRenameBtn").onclick = async () => {
+  if (!renameTargetId) return;
+
+  const newTitle = $("renameTitleInput").value.trim();
+
+  if (!newTitle) {
+    alert("Hindi maaaring walang pamagat.");
+    return;
+  }
+
+  if (newTitle.length > 60) {
+    alert("Hanggang 60 characters lamang ang pamagat.");
+    return;
+  }
+
+  const id = renameTargetId;
+  const c = conversations.find(item => item.id === id);
+
+  if (!c) {
+    closeRenameModal();
+    return;
+  }
+
+  $("saveRenameBtn").disabled = true;
+
+  try {
+    status.textContent = "● Ina-update ang pamagat...";
+
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(
+      `${API_URL.replace("/chat", "")}/conversations/${id}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ title: newTitle })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi mapalitan ang pamagat.");
+    }
+
+    c.title = data.title;
+    renderHistory();
+
+    status.textContent = "● Na-update ang pamagat";
+
+    closeRenameModal();
+
+  } catch (error) {
+    console.error("Rename error:", error);
+    status.textContent = "● " + error.message;
+    alert(error.message);
+
+  } finally {
+    $("saveRenameBtn").disabled = false;
+  }
+};
+
+  async function deleteConversation(id) {
+  const c = conversations.find(item => item.id === id);
+  if (!c || !currentUser) return;
+
+  const confirmed = confirm(
+    'Sigurado ka bang buburahin ang "' +
+    c.title +
+    '"?\n\nKasama nitong mabubura ang lahat ng mensahe nito. Hindi na ito maibabalik.'
+  );
+
+  if (!confirmed) return;
+
+  try {
+    status.textContent = "● Binubura ang usapan...";
+
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(
+      `${API_URL.replace("/chat", "")}/conversations/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Hindi mabura ang usapan.");
+    }
+
+    conversations = conversations.filter(item => item.id !== id);
+
+    if (activeConversationId === id) {
+      activeConversationId = null;
+
+      if (conversations.length === 0) {
+        // Gumawa ng bagong blank conversation.
+        const createToken = await currentUser.getIdToken();
+
+        const createResponse = await fetch(
+          `${API_URL.replace("/chat", "")}/conversations`,
+          {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${createToken}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({})
+          }
+        );
+
+        if (!createResponse.ok) {
+          throw new Error("Nabura ang usapan pero hindi nakagawa ng bago.");
+        }
+
+        const created = await createResponse.json();
+
+        conversations.push({
+          ...created.conversation,
+          messages: []
+        });
+      }
+
+      activeConversationId = conversations[0].id;
+
+      await loadConversationMessages(activeConversationId);
+      renderChat();
+    }
+
+    renderHistory();
+    updateMemoryView();
+
+    status.textContent = "● Nabura na ang usapan";
+
+  } catch (error) {
+    console.error("Delete conversation error:", error);
+    status.textContent = "● " + error.message;
+    alert(error.message);
+  }
+}
+  
+async function switchConversation(id) {
+  if (busy || id === activeConversationId) return;
+
+  activeConversationId = id;
+  renderHistory();
+
+  const c = conversations.find(item => item.id === id);
+  if (c) c.messages = [];
+
+  await loadConversationMessages(id);
+
+  renderChat();
+  showView("chatView");
+}
+
+function showView(viewId) {
+  document.querySelectorAll(".view").forEach(v => {
+    v.classList.toggle("active", v.id === viewId);
+  });
+  document.querySelectorAll(".tab").forEach(t => {
+    t.classList.toggle("active", t.dataset.view === viewId);
+  });
+  if (viewId === "memoryView") updateMemoryView();
+}
+
+function updateMemoryView() {
+  const count = conversations.reduce(
+    (sum, c) => sum + (c.messages || []).length,
+    0
+  );
+
+  $("conversationCount").textContent =
+    conversations.length + " usapan at " + count +
+    " mensahe ang kasalukuyang nasa memorya ng app.";
+
+  $("notes").value = state.notes || "";
+}
+
+function renderCodeContent(container, text) {
+    const pattern = /```([^\n]*)\n([\s\S]*?)```/g;
+
+    let lastIndex = 0;
+    let match;
+
+    container.innerHTML = "";
+
+    function renderMarkdown(content) {
+        if (!content) return;
+
+        const html = marked.parse(content, {
+            gfm: true,
+            breaks: true
+        });
+
+        const safeHTML = DOMPurify.sanitize(html);
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "markdown-content";
+        wrapper.innerHTML = safeHTML;
+
+        container.appendChild(wrapper);
+    }
+
+    while ((match = pattern.exec(text)) !== null) {
+        // Markdown text bago ang code block
+        renderMarkdown(text.slice(lastIndex, match.index));
+
+        const language = match[1].trim().toLowerCase() || "plaintext";
+        const code = match[2].replace(/\n$/, "");
+
+        // Code block container
+        const block = document.createElement("div");
+        block.className = "code-block";
+
+        // Toolbar
+        const toolbar = document.createElement("div");
+        toolbar.className = "code-toolbar";
+
+        const languageLabel = document.createElement("span");
+        languageLabel.textContent = language;
+
+        const actions = document.createElement("div");
+        actions.className = "code-actions";
+
+        // Copy button
+        const copyButton = document.createElement("button");
+        copyButton.className = "code-copy-btn";
+        copyButton.textContent = "Copy";
+
+        copyButton.addEventListener("click", async () => {
+            try {
+                await navigator.clipboard.writeText(code);
+                copyButton.textContent = "Copied!";
+                setTimeout(() => {
+                    copyButton.textContent = "Copy";
+                }, 1500);
+            } catch (error) {
+                copyButton.textContent = "Failed";
+            }
+        });
+
+        actions.appendChild(copyButton);
+
+        // Code display
+        const pre = document.createElement("pre");
+        const codeElement = document.createElement("code");
+
+        codeElement.className = `language-${language}`;
+        codeElement.textContent = code;
+
+        pre.appendChild(codeElement);
+
+        // Highlight.js
+        if (window.hljs) {
+            try {
+                hljs.highlightElement(codeElement);
+            } catch (error) {
+                console.warn("Code highlighting failed:", error);
+            }
+        }
+
+        // HTML Live Preview
+        if (language === "html") {
+            const previewButton = document.createElement("button");
+            previewButton.className = "code-preview-btn";
+            previewButton.textContent = "Live Preview";
+
+            previewButton.addEventListener("click", () => {
+                const previewWindow = window.open("", "_blank");
+
+                if (!previewWindow) {
+                    alert("Please allow pop-ups to use Live Preview.");
+                    return;
+                }
+
+                previewWindow.document.open();
+                previewWindow.document.write(code);
+                previewWindow.document.close();
+            });
+
+            actions.appendChild(previewButton);
+        }
+
+        toolbar.appendChild(languageLabel);
+        toolbar.appendChild(actions);
+
+        block.appendChild(toolbar);
+        block.appendChild(pre);
+
+        container.appendChild(block);
+
+        lastIndex = pattern.lastIndex;
+    }
+
+    // Natitirang Markdown text pagkatapos ng huling code block
+    renderMarkdown(text.slice(lastIndex));
+}
+
+function addMessageElement(role, text) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "message " + role;
+
+  const sender = document.createElement("div");
+  sender.className = "sender";
+  sender.textContent = role === "user" ? "You" : "Daneel Giskard";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+
+  const originalText = String(text);
+
+  if (role === "bot") {
+    renderCodeContent(bubble, originalText);
+  } else {
+    bubble.textContent = originalText;
+  }
+
+  // Copy button for the entire message
+  const copyButton = document.createElement("button");
+  copyButton.className = "message-copy-btn";
+  copyButton.type = "button";
+  copyButton.textContent = "📋";
+  copyButton.title = "Copy entire message";
+  copyButton.setAttribute("aria-label", "Copy entire message");
+
+  copyButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(originalText);
+
+      copyButton.textContent = "✓";
+      copyButton.title = "Copied!";
+
+      setTimeout(() => {
+        copyButton.textContent = "📋";
+        copyButton.title = "Copy entire message";
+      }, 1500);
+
+    } catch (error) {
+      console.error("Message copy failed:", error);
+      copyButton.textContent = "✕";
+
+      setTimeout(() => {
+        copyButton.textContent = "📋";
+      }, 1500);
+    }
+  });
+
+  wrapper.append(sender, bubble, copyButton);
+  chat.appendChild(wrapper);
+
+  return wrapper;
+}
+
+function renderChat() {
+  chat.replaceChildren();
+  const c = activeConversation();
+  if (!c) return;
+
+  if (!c.messages.length) {
+    const welcome = document.createElement("div");
+    welcome.className = "welcome";
+
+    const icon = document.createElement("div");
+    icon.className = "welcome-icon";
+    icon.textContent = "✦";
+
+    const title = document.createElement("h2");
+    title.textContent = "Kumusta, kaibigan.";
+
+    const desc = document.createElement("p");
+    desc.textContent =
+      "Ako si Daneel Giskard, ang kaibigan mo. " +
+      "Dito puwede kang magkuwento, magtanong, at magsiyasat ng mga ideya. " +
+      "Unti-unti nating bubuuin ang diary ng iyong mga pag-iisip.";
+
+    const suggestions = document.createElement("div");
+    suggestions.className = "suggestions";
+
+    [
+      "May ideya akong gusto kong siyasatin.",
+      "May natutuhan ako tungkol sa buhay.",
+      "Gusto kong balikan ang isang paniniwala.",
+      "Tulungan mo akong pag-isipan ang isang problema."
+    ].forEach(text => {
+      const button = document.createElement("button");
+      button.className = "suggestion";
+      button.textContent = text;
+      button.onclick = () => {
+        input.value = text;
+        input.focus();
+        resizeInput();
+      };
+      suggestions.appendChild(button);
+    });
+
+    welcome.append(icon, title, desc, suggestions);
+    chat.appendChild(welcome);
+  } else {
+    c.messages.forEach(m => {
+      addMessageElement(m.role, m.text);
+    });
+  }
+
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text || busy) return;
+
+  if (!currentUser) {
+    status.textContent = "● Mag-sign in muna sa Google";
+    return;
+  }
+
+  const conversationId = activeConversationId;
+  const c = conversations.find(item => item.id === conversationId);
+
+  if (!c) return;
+
+  busy = true;
+  sendBtn.disabled = true;
+
+  c.messages.push({
+    role: "user",
+    text,
+    timestamp: new Date().toISOString()
+  });
+
+  input.value = "";
+  resizeInput();
+  renderHistory();
+  renderChat();
+
+  status.textContent = "● Nag-iisip si Daneel...";
+
+  const loading = addMessageElement("bot", "Sandali lang…");
+  chat.scrollTop = chat.scrollHeight;
+
+  try {
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify({
+        message: text,
+        conversationId: conversationId
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const details =
+        data.error || response.statusText || "Hindi alam ang dahilan";
+      throw new Error(
+        "Server response " + response.status + ": " + details
+      );
+    }
+
+    if (typeof data.reply !== "string") {
+      throw new Error("Walang valid na reply sa server response.");
+    }
+
+loading.remove();
+addMessageElement("bot", data.reply);
+
+    c.messages.push({
+      role: "bot",
+      text: data.reply,
+      timestamp: new Date().toISOString()
+    });
+
+    // Kunin muli ang listahan para ma-update ang title at order.
+    const refreshToken = await currentUser.getIdToken();
+
+    const listResponse = await fetch(
+      `${API_URL.replace("/chat", "")}/conversations`,
+      {
+        headers: {
+          "Authorization": `Bearer ${refreshToken}`
+        }
+      }
+    );
+
+    if (listResponse.ok) {
+      const listData = await listResponse.json();
+
+      conversations = (listData.conversations || []).map(item => {
+        const existing = conversations.find(old => old.id === item.id);
+        return {
+          ...item,
+          messages: existing ? existing.messages : []
+        };
+      });
+    }
+
+    renderHistory();
+    status.textContent = "● Handa nang makinig";
+
+  } catch (error) {
+    console.error(error);
+
+    const errorText =
+      "Hindi ko makuha ang sagot mula sa AI server.\n" +
+      "Detalye: " + error.message;
+
+    loading.querySelector(".bubble").textContent = errorText;
+
+    // Hindi ise-save sa Firestore ang error message.
+    status.textContent = "● May problema sa koneksyon";
+
+  } finally {
+    busy = false;
+    sendBtn.disabled = false;
+    chat.scrollTop = chat.scrollHeight;
+    updateMemoryView();
+  }
+}
+
+function resizeInput() {
+  input.style.height = "48px";
+  input.style.height = Math.min(input.scrollHeight, 130) + "px";
+}
+
+$("newChatBtn").addEventListener("click", async () => {
+  if (busy || !currentUser) return;
+
+  try {
+    status.textContent = "● Gumagawa ng bagong usapan...";
+
+    const idToken = await currentUser.getIdToken();
+
+    const response = await fetch(
+      `${API_URL.replace("/chat", "")}/conversations`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${idToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({})
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Hindi makagawa ng bagong usapan.");
+    }
+
+    const data = await response.json();
+
+    const c = {
+      ...data.conversation,
+      messages: []
+    };
+
+    conversations.unshift(c);
+    activeConversationId = c.id;
+
+    renderHistory();
+    renderChat();
+    showView("chatView");
+    input.focus();
+
+    status.textContent = "● Bagong usapan";
+
+  } catch (error) {
+    console.error("New conversation error:", error);
+    status.textContent = "● Hindi nakagawa ng bagong usapan";
+  }
+});
+
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => showView(tab.dataset.view));
+});
+
+
+sendBtn.addEventListener("click", sendMessage);
+
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && e.ctrlKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+input.addEventListener("input", resizeInput);
+
+$("saveNotes").addEventListener("click", () => {
+  state.notes = $("notes").value;
+  if (persist()) {
+    $("notice").textContent = "Nai-save sa browser na ito. ✓";
+  } else {
+    $("notice").textContent =
+      "Hindi na-save. Mag-backup o magpalaya ng storage space.";
+  }
+});
+
+function downloadFile(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+$("exportBtn").addEventListener("click", () => {
+  const backup = {
+    app: "Daneel Giskard",
+    exportedAt: new Date().toISOString(),
+    ...state
+  };
+  downloadFile(
+    "daneel-diary-backup.json",
+    JSON.stringify(backup, null, 2),
+    "application/json"
+  );
+});
+
+$("downloadNotes").addEventListener("click", () => {
+  state.notes = $("notes").value;
+  persist();
+  downloadFile(
+    "daneel-personal-notes.txt",
+    state.notes || "",
+    "text/plain;charset=utf-8"
+  );
+});
+
+renderHistory();
+renderChat();
+updateMemoryView();
+</script>
+</body>
+</html>
