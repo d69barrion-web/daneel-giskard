@@ -3862,28 +3862,28 @@ app.post(
       ]);
 
       // Kunin ang route paths at quoted phrases.
-      const phrases = [
-        ...new Set([
-          ...(question.match(/\/[A-Za-z0-9_/:.-]+/g) || []),
-          ...(question.match(/["'`]([^"'`]{2,100})["'`]/g) || [])
-            .map(value => value.slice(1, -1))
-        ])
-      ]
-        .map(value => value.toLowerCase().trim())
-        .filter(value => value.length >= 2);
+const phrases = [
+  ...new Set([
+    ...(question.match(/\/[A-Za-z0-9_/:.-]+/g) || []),
+    ...(question.match(/["'`]([^"'`]{2,100})["'`]/g) || [])
+      .map(value => value.slice(1, -1))
+  ])
+]
+  .map(value => value.toLowerCase().trim())
+  .filter(value => value.length >= 2);
 
       // Kunin ang searchable keywords.
-      const keywords = [
-        ...new Set(
-          question
-            .match(/[A-Za-z_$][A-Za-z0-9_$]*/g)
-            ?.map(word => word.toLowerCase())
-            .filter(word =>
-              word.length >= 2 &&
-              !stopWords.has(word)
-            ) || []
-        )
-      ].slice(0, 15);
+const keywords = [
+  ...new Set(
+    question
+      .match(/[A-Za-z_$][A-Za-z0-9_$]*/g)
+      ?.map(word => word.toLowerCase())
+      .filter(word =>
+        word.length >= 2 &&
+        !stopWords.has(word)
+      ) || []
+  )
+].slice(0, 15);
 
       if (keywords.length === 0 && phrases.length === 0) {
         return res.status(400).json({
