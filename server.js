@@ -4142,8 +4142,7 @@ Be precise, skeptical, and transparent.
       return res.status(500).json({
         success: false,
         readOnly: true,
-        error: "Hindi nagawa ang AI Code Analysis.",
-        details: error.message
+        error: "Hindi nagawa ang AI Code Analysis."
       });
     }
   }
