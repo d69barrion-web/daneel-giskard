@@ -3838,78 +3838,136 @@ app.post(
       }
 
       // =====================================
-      // SOURCE RETRIEVAL v1.1
-      // Phrase Matching + Scoring + Deduplication
+      // SOURCE RETRIEVAL v1.2
+      // Whole-Token Matching + Relevance Scoring
+      // + Diverse Selection + Evidence Deduplication
       // =====================================
 
       const file = await inspectSourceFile("server.js");
       const lines = file.content.split(/\r\n|\n|\r/);
 
+      // 1. FILTER CONVERSATIONAL WORDS
+
       const stopWords = new Set([
+        // Filipino
         "ang", "ng", "mga", "sa", "at", "ay",
         "ano", "paano", "bakit", "sino", "alin",
+        "ito", "iyan", "iyon", "dito", "doon",
+        "siya", "nila", "natin", "namin",
+        "ako", "ikaw", "mo", "ko", "niya",
+        "kami", "tayo", "kayo", "sila",
+        "ba", "pa", "na", "po", "ho",
+        "nga", "rin", "din", "daw", "raw",
+        "lang", "lamang", "muna", "kasi",
+        "kung", "kapag", "dahil", "para",
+        "mula", "hanggang", "tulad", "gaya",
+        "may", "wala", "meron", "itong",
+        "iyong", "aming", "ating", "inyong",
+        "gamit", "gamitin", "ginagamit",
+        "ginagawa", "ipaliwanag", "ipakita",
+        "sabihin", "tingnan", "suriin",
+        "tungkol", "mismo", "lahat",
+        "mas", "mga", "hindi", "oo",
+        "please", "help", "tell", "show",
+        "explain", "describe",
+
+        // English
         "the", "and", "for", "from", "with",
         "what", "how", "does", "this", "that",
-        "are", "is", "was", "were", "can",
-        "code", "function", "file", "please",
-        "dito", "iyon", "iyan", "ito", "siya",
-        "ginagamit", "ginagawa", "tungkol"
+        "these", "those", "are", "is", "was",
+        "were", "can", "could", "would",
+        "should", "about", "into", "your",
+        "you", "me", "my", "our", "their",
+        "them", "they", "its", "it", "of",
+        "to", "in", "on", "by", "as",
+        "be", "been", "being", "which",
+        "who", "when", "where", "why",
+        "please", "just", "also", "very"
       ]);
 
-      // Kunin ang route paths at quoted phrases.
-const phrases = [
-  ...new Set([
-    ...(question.match(/\/[A-Za-z0-9_/:.-]+/g) || []),
-    ...(question.match(/["'`][^"'`]{2,100}["'`]/g) || [])
-      .map(value => value.slice(1, -1))
-  ])
-]
-  .map(value => value.toLowerCase().trim())
-  .filter(value => value.length >= 2);
+      // 2. EXTRACT EXACT PHRASES AND ROUTES
 
-      // Kunin ang searchable keywords.
-const keywords = [
-  ...new Set(
-    question
-      .match(/[A-Za-z_$][A-Za-z0-9_$]*/g)
-      ?.map(word => word.toLowerCase())
-      .filter(word =>
-        word.length >= 2 &&
-        !stopWords.has(word)
-      ) || []
-  )
-].slice(0, 15);
+      const phrases = [
+        ...new Set([
+          ...(question.match(/\/[A-Za-z0-9_/:.-]+/g) || []),
+
+          ...(question.match(/["'`][^"'`]{2,100}["'`]/g) || [])
+            .map(value => value.slice(1, -1))
+        ])
+      ]
+        .map(value => value.toLowerCase().trim())
+        .filter(value => value.length >= 2);
+
+      // 3. EXTRACT SEARCHABLE KEYWORDS
+
+      const keywords = [
+        ...new Set(
+          question
+            .match(/[A-Za-z_$][A-Za-z0-9_$]*/g)
+            ?.map(word => word.toLowerCase())
+            .filter(word =>
+              word.length >= 2 &&
+              !stopWords.has(word)
+            ) || []
+        )
+      ].slice(0, 20);
 
       if (keywords.length === 0 && phrases.length === 0) {
         return res.status(400).json({
           success: false,
           readOnly: true,
-          error: "Walang makilalang search terms sa tanong."
+          error: "Walang makilalang technical search terms sa tanong."
         });
       }
 
-      // Score bawat source line.
+      // 4. TOKENIZE EACH SOURCE LINE
+      // Whole-token matching prevents substring false positives.
+
       const candidates = [];
 
       for (let i = 0; i < lines.length; i++) {
-        const currentLine = lines[i].toLowerCase();
+
+        const originalLine = lines[i];
+        const currentLine = originalLine.toLowerCase();
+
+        const sourceTokens = new Set(
+          currentLine.match(/[a-z_$][a-z0-9_$]*/g) || []
+        );
 
         const matchedKeywords = keywords.filter(keyword =>
-          currentLine.includes(keyword)
+          sourceTokens.has(keyword)
         );
 
         const matchedPhrases = phrases.filter(phrase =>
           currentLine.includes(phrase)
         );
 
-        let score = matchedKeywords.length;
-
-        // Mas mataas ang bigat ng eksaktong phrase match.
-        score += matchedPhrases.length * 8;
-
-        if (score === 0) {
+        if (
+          matchedKeywords.length === 0 &&
+          matchedPhrases.length === 0
+        ) {
           continue;
         }
+
+        // 5. RELEVANCE SCORING
+
+        let score = 0;
+
+        for (const keyword of matchedKeywords) {
+          // Longer technical terms receive slightly more weight.
+          score += keyword.length >= 5 ? 2 : 1;
+        }
+
+        // Exact phrase matches receive stronger weight.
+        score += matchedPhrases.length * 8;
+
+        // Additional weight for explicit code identifiers.
+        const identifierMatches = matchedKeywords.filter(keyword =>
+          /[_$]/.test(keyword) ||
+          /[a-z][0-9]/.test(keyword)
+        );
+
+        score += identifierMatches.length * 3;
 
         candidates.push({
           line: i + 1,
@@ -3921,46 +3979,77 @@ const keywords = [
         });
       }
 
-      // Unahin ang pinakamataas ang relevance score.
+      // 6. RANK CANDIDATES
+
       candidates.sort((a, b) =>
         b.score - a.score || a.line - b.line
       );
 
-      // Pumili ng pinakamataas ang score.
-      const selected = candidates.slice(0, 35);
+      // 7. DIVERSE SOURCE SELECTION
+      // Avoid selecting many lines from the same small region.
+      // Each selected line already includes surrounding context.
 
-      // Ibalik sa original source order.
+      const selected = [];
+
+      for (const candidate of candidates) {
+
+        const overlapsNearbySelection = selected.some(item =>
+          Math.abs(item.line - candidate.line) <= 8
+        );
+
+        if (overlapsNearbySelection) {
+          continue;
+        }
+
+        selected.push(candidate);
+
+        if (selected.length >= 35) {
+          break;
+        }
+      }
+
+      // Return selected matches to original source order.
+
       selected.sort((a, b) => a.start - b.start);
 
-      // Pagsamahin ang magkakapatong na source ranges.
+      // 8. MERGE OVERLAPPING SOURCE RANGES
+
       const mergedRanges = [];
 
       for (const item of selected) {
+
         const previous = mergedRanges[
           mergedRanges.length - 1
         ];
 
         if (previous && item.start <= previous.end) {
+
           previous.end = Math.max(
             previous.end,
             item.end
           );
 
           previous.matches.push(item);
+
         } else {
+
           mergedRanges.push({
             start: item.start,
             end: item.end,
             matches: [item]
           });
+
         }
       }
 
-      // Ihanda ang evidence para sa AI.
+      // 9. BUILD SOURCE EVIDENCE
+
       let evidence = "";
       let includedCount = 0;
+      const includedSourceRanges = [];
 
       for (const range of mergedRanges) {
+
         const excerpt = [];
 
         for (
@@ -3998,22 +4087,34 @@ const keywords = [
 
         evidence += block;
         includedCount++;
+
+        includedSourceRanges.push({
+          start: range.start + 1,
+          end: range.end,
+          matchedLines: range.matches.map(item => item.line),
+          matchedTerms,
+          scores: range.matches.map(item => item.score)
+        });
       }
 
-      // Huwag magpatuloy kung walang source evidence.
+      // 10. REQUIRE ACTUAL SOURCE EVIDENCE
+
       if (!evidence) {
         return res.status(404).json({
           success: false,
           readOnly: true,
           error: "Walang sapat na matching source evidence.",
           retrieval: {
+            version: "1.2",
+            method: "whole-token-relevance-diverse-selection",
             keywords,
             phrases,
-            totalMatches: candidates.length
+            totalMatches: candidates.length,
+            selectedMatches: selected.length
           }
         });
       }
-      
+
       // =====================================
       // AI CODE ANALYSIS
       // =====================================
@@ -4027,6 +4128,20 @@ and answer the administrator's question.
 STRICT RULES:
 
 1. Use only the supplied source evidence.
+1A. The supplied excerpts are selected by a relevance
+    retrieval system. Do not assume every excerpt is
+    relevant merely because it was retrieved.
+
+1B. Evaluate each excerpt against the administrator's
+    actual question. Ignore unrelated excerpts.
+
+1C. Do not combine unrelated implementations into one
+    pipeline. If evidence comes from different systems,
+    explicitly distinguish them.
+
+1D. Never describe retrieval metadata as proof of
+    implementation. Metadata describes the search process,
+    not the correctness of the retrieved evidence.
 2. Never invent functions, endpoints, variables,
    behavior, or implementation details.
 3. Do not assume that two pieces of code are connected
@@ -4083,7 +4198,8 @@ Be precise, skeptical, and transparent.
           sourceFile: file.filename,
           sourceSHA256: file.sha256,
           sourceLines: file.lines,
-          retrievalMethod: "phrase-matching-scoring-deduplication",
+          retrievalMethod: "whole-token-relevance-diverse-selection",
+          retrievalVersion: "1.2",
           searchKeywords: keywords,
           searchPhrases: phrases,
           matchingExcerptCount: includedCount,
@@ -4115,12 +4231,19 @@ Be precise, skeptical, and transparent.
         },
 
         retrieval: {
+  version: "1.2",
+  method: "whole-token-relevance-diverse-selection",
+
   keywords,
   phrases,
+
   totalMatches: candidates.length,
   selectedMatches: selected.length,
   mergedSourceRanges: mergedRanges.length,
   includedExcerpts: includedCount,
+
+  includedSourceRanges,
+
   maximumMatches: 35,
   maximumEvidenceCharacters: 28000
 },
