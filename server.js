@@ -3845,11 +3845,6 @@ app.post(
       const file = await inspectSourceFile("server.js");
       const lines = file.content.split(/\r\n|\n|\r/);
 
-      const normalizedQuestion = question
-        .toLowerCase()
-        .replace(/\s+/g, " ")
-        .trim();
-
       const stopWords = new Set([
         "ang", "ng", "mga", "sa", "at", "ay",
         "ano", "paano", "bakit", "sino", "alin",
