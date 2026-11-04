@@ -2220,6 +2220,242 @@ codeSearchControls.appendChild(codeSearchButton);
 codeExplorer.appendChild(codeSearchControls);
 codeExplorer.appendChild(explorerResultBox);
 
+// ==========================================
+// AI CODE ANALYST UI — READ ONLY
+// ==========================================
+
+const analystSection = document.createElement("div");
+
+analystSection.style.cssText = `
+  margin-top:20px;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--panel);
+`;
+
+const analystTitle = document.createElement("h3");
+analystTitle.textContent = "🧠 AI Code Analyst";
+
+const analystDescription = document.createElement("p");
+analystDescription.textContent =
+  "Magtanong tungkol sa aktuwal na implementation ng Daneel.";
+
+analystDescription.style.cssText = `
+  font-size:13px;
+  opacity:.75;
+  line-height:1.5;
+`;
+
+const analystQuestion = document.createElement("textarea");
+
+analystQuestion.placeholder =
+  "Hal. Ipaliwanag ang retrieval at evidence pipeline ng AI Code Analyst.";
+
+analystQuestion.rows = 4;
+
+analystQuestion.style.cssText = `
+  width:100%;
+  box-sizing:border-box;
+  padding:12px;
+  margin:10px 0;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--panel2);
+  color:inherit;
+  font-size:14px;
+  line-height:1.5;
+  resize:vertical;
+`;
+
+const analystButton = document.createElement("button");
+
+analystButton.type = "button";
+analystButton.className = "primary-btn";
+analystButton.textContent = "🔍 Analyze Code";
+
+analystButton.style.cssText = `
+  width:100%;
+  margin-bottom:12px;
+`;
+
+const analystResult = document.createElement("pre");
+
+analystResult.style.cssText = `
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  overflow-x:auto;
+  max-height:500px;
+  overflow-y:auto;
+  padding:12px;
+  border-radius:8px;
+  background:var(--panel2);
+  font-size:13px;
+  line-height:1.6;
+  display:none;
+`;
+
+const analystMetadata = document.createElement("pre");
+
+analystMetadata.style.cssText = `
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  overflow-x:auto;
+  max-height:350px;
+  overflow-y:auto;
+  padding:12px;
+  border-radius:8px;
+  background:var(--panel2);
+  font-size:12px;
+  line-height:1.6;
+  display:none;
+`;
+
+const analystCopyButton = document.createElement("button");
+
+analystCopyButton.type = "button";
+analystCopyButton.textContent = "📋 Copy Analysis";
+analystCopyButton.style.cssText = `
+  width:100%;
+  margin-top:8px;
+  display:none;
+`;
+
+analystSection.appendChild(analystTitle);
+analystSection.appendChild(analystDescription);
+analystSection.appendChild(analystQuestion);
+analystSection.appendChild(analystButton);
+analystSection.appendChild(analystResult);
+analystSection.appendChild(analystMetadata);
+analystSection.appendChild(analystCopyButton);
+
+codeExplorer.appendChild(analystSection);
+
+
+// ==========================================
+// AI CODE ANALYST REQUEST
+// ==========================================
+
+analystButton.addEventListener("click", async () => {
+
+  if (!currentUser) {
+    alert("Mag-sign in muna sa Google.");
+    return;
+  }
+
+  const question = analystQuestion.value.trim();
+
+  if (!question) {
+    alert("Maglagay muna ng tanong.");
+    analystQuestion.focus();
+    return;
+  }
+
+  analystButton.disabled = true;
+  analystButton.textContent = "Sinusuri ang source code...";
+
+  analystResult.style.display = "block";
+  analystMetadata.style.display = "none";
+  analystCopyButton.style.display = "none";
+
+  analystResult.textContent = "Please wait...";
+  analystMetadata.textContent = "";
+
+  try {
+
+    // Firebase authentication
+    const idToken = await currentUser.getIdToken();
+
+    // Existing backend base URL
+    const baseURL = API_URL.replace(/\/chat\/?$/, "");
+
+    // Send request to AI Code Analyst
+    const response = await fetch(
+      `${baseURL}/admin/code-analysis`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          question
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || `HTTP ${response.status}`
+      );
+    }
+
+    // Display AI analysis
+    analystResult.textContent =
+      data.analysis || "Walang analysis na ibinalik.";
+
+    // Display retrieval metadata
+    analystMetadata.textContent =
+      "RETRIEVAL METADATA\n\n" +
+      JSON.stringify(data.retrieval || {}, null, 2);
+
+    analystMetadata.style.display = "block";
+    analystCopyButton.style.display = "block";
+
+  } catch (error) {
+
+    analystResult.textContent =
+      "AI CODE ANALYST ERROR\n\n" +
+      error.message;
+
+    console.error("AI Code Analyst failed:", error);
+
+  } finally {
+
+    analystButton.disabled = false;
+    analystButton.textContent = "🔍 Analyze Code";
+
+  }
+
+});
+
+// ==========================================
+// COPY ANALYSIS + METADATA
+// ==========================================
+
+analystCopyButton.addEventListener("click", async () => {
+
+  try {
+
+    const fullResult =
+      "AI CODE ANALYSIS\n\n" +
+      analystResult.textContent +
+      "\n\n" +
+      analystMetadata.textContent;
+
+    await navigator.clipboard.writeText(fullResult);
+
+    analystCopyButton.textContent = "✓ Copied!";
+
+    setTimeout(() => {
+      analystCopyButton.textContent = "📋 Copy Analysis";
+    }, 1500);
+
+  } catch (error) {
+
+    console.error("Analysis copy failed:", error);
+
+    analystCopyButton.textContent = "✕ Copy failed";
+
+    setTimeout(() => {
+      analystCopyButton.textContent = "📋 Copy Analysis";
+    }, 1500);
+
+  }
+
+});
 
 $("memoryView").appendChild(codeExplorer);
 
